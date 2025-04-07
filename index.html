@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Игровое поле 4x4</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Игровое поле</h1>
+
+    <table class="deck">
+        {% for row in grid %}
+        <tr class="row">
+            {% for cell in row %}
+            <td class="cell">
+                {% if cell %}
+                <div class="card" style="background: {{ 'lightblue' if cell.player_id == 1 else 'lightcoral' }}">
+                    <strong>{{ cell.name }}</strong>
+                    <p>⚔️ {{ cell.attack }}</p>
+                    <p>❤️ {{ cell.health }}</p>
+                </div>
+                {% else %}
+                <div class="empty">Пусто</div>
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

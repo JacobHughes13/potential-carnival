@@ -1,0 +1,8 @@
+Name:
+Creators: Timmitr,
+Description: It`s a game on flask(python). 2 Player come into 1 lobby. They start the game with different starter decks (5 weak cards).
+    When they battle AI enemies to win new cards. After 3 AI battles, they battle another player with their custom deck.
+    Key Mechanics:
+        PVE Phase: Roguelike battles to build your deck.
+        PVP Phase: 1v1 duels with earned cards.
+More information here https://1drv.ms/x/c/68a91211e46ae3d6/EeSIzCPpePtPlWVxDlCW54EBkNan4SyLq2eFnnNTnVmPKg?e=nEHO5W

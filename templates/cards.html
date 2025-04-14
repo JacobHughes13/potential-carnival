@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Все карты</title>
+</head>
+<body>
+    <h1>Список карт</h1>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Название</th>
+            <th>Атака</th>
+            <th>Здоровье</th>
+            <th>Стоимость</th>
+        </tr>
+        {% for card in cards %}
+        <tr>
+            <td>{{ card[0] }}</td>
+            <td>{{ card[1] }}</td>
+            <td>{{ card[2] }}</td>
+            <td>{{ card[3] }}</td>
+            <td>{{ card[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

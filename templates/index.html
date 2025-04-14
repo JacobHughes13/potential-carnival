@@ -1,30 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Игровое поле 4x4</title>
+    <title>Card Battle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Игровое поле</h1>
+    <div class="game-container">
+        <h1>⚔️ CARD BATTLE ⚔️</h1>
 
-    <table class="deck">
-        {% for row in grid %}
-        <tr class="row">
-            {% for cell in row %}
-            <td class="cell">
-                {% if cell %}
-                <div class="card" style="background: {{ 'lightblue' if cell.player_id == 1 else 'lightcoral' }}">
-                    <strong>{{ cell.name }}</strong>
-                    <p>⚔️ {{ cell.attack }}</p>
-                    <p>❤️ {{ cell.health }}</p>
+        <div class="player-area player1">
+            <h2>Игрок 1</h2>
+            <div class="card-selection">
+                <a href="/place_card/1/1/0" class="card-preview">Воин (⚔️3 ❤️5)</a>
+                <a href="/place_card/1/2/0" class="card-preview">Лучник (⚔️2 ❤️3)</a>
+                <a href="/place_card/1/3/0" class="card-preview">Маг (⚔️4 ❤️2)</a>
+            </div>
+        </div>
+
+        <div class="battlefield">
+            <div class="grid-container">
+                {% for row in grid %}
+                <div class="grid-row">
+                    {% for cell in row %}
+                    <div class="grid-cell">
+                        {% if cell %}
+                        <div class="card player{{ cell.player_id }}">
+                            <div class="card-name">{{ cell.name }}</div>
+                            <div class="card-stats">
+                                <span>⚔️{{ cell.attack }}</span>
+                                <span>❤️{{ cell.health }}</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="empty-slot">Пусто</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
-                {% else %}
-                <div class="empty">Пусто</div>
-                {% endif %}
-            </td>
-            {% endfor %}
-        </tr>
-        {% endfor %}
-    </table>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="player-area player2">
+            <h2>Игрок 2</h2>
+            <div class="card-selection">
+                <a href="/place_card/2/1/0" class="card-preview">Воин (⚔️3 ❤️5)</a>
+                <a href="/place_card/2/2/0" class="card-preview">Лучник (⚔️2 ❤️3)</a>
+                <a href="/place_card/2/3/0" class="card-preview">Маг (⚔️4 ❤️2)</a>
+            </div>
+        </div>
+
+        <div class="controls">
+            <a href="/end_turn" class="control-button">Завершить ход</a>
+            <a href="/reset" class="control-button">Сбросить игру</a>
+        </div>
+    </div>
 </body>
 </html>

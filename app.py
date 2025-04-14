@@ -1,19 +1,30 @@
-from flask import Flask, render_template
-from deck import Deck, Card
+from flask import Flask, render_template, redirect, url_for
+from deck import Deck
 
 app = Flask(__name__)
-
-# Создаём глобальное игровое поле (для примера)
 deck = Deck()
-
-# Добавляем тестовые карты для демонстрации
-deck.place_card(Card("Воин", 3, 5, 1), 0)  # Игрок 1, колонка 0
-deck.place_card(Card("Лучник", 2, 3, 2), 3)  # Игрок 2, колонка 3
 
 @app.route("/")
 def home():
-    # Передаём игровое поле в HTML-шаблон
     return render_template("index.html", grid=deck.grid)
 
+@app.route("/place_card/<int:player_id>/<int:card_id>/<int:col>")
+def place_card(player_id, card_id, col):
+    if card := deck.get_card_by_id(card_id, player_id):
+        deck.place_card(card, col)
+    return redirect(url_for("home"))
+
+@app.route("/end_turn")
+def end_turn():
+    deck.move_cards()
+    damage = deck.battle_phase()
+    deck.remove_dead_cards()
+    return redirect(url_for("home"))
+
+@app.route("/reset")
+def reset():
+    deck.grid = [[None for _ in range(4)] for _ in range(4)]
+    return redirect(url_for("home"))
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()

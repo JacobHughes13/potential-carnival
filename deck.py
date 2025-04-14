@@ -11,27 +11,28 @@ class Card:
     player_id: int
 
 class Deck:
-    def __init__(self, db_path: str = 'cards.db'):
+    def __init__(self, db_path: str = 'BD/BD.db'):
         self.grid: List[List[Optional[Card]]] = [[None for _ in range(4)] for _ in range(4)]
         self.db_path = db_path
-        self._init_db()
+        # todo conect BD.db
+        # self._init_db()
 
-    def _init_db(self):
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS cards (
-                    id INTEGER PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    attack INTEGER NOT NULL,
-                    health INTEGER NOT NULL,
-                    cost INTEGER NOT NULL
-                )
-            ''')
-            if not conn.execute("SELECT 1 FROM cards LIMIT 1").fetchone():
-                conn.executemany(
-                    "INSERT INTO cards (name, attack, health, cost) VALUES (?, ?, ?, ?)",
-                    [("Воин", 3, 5, 1), ("Лучник", 2, 3, 2), ("Маг", 4, 2, 3)]
-                )
+    # def _init_db(self):
+    #     with sqlite3.connect(self.db_path) as conn:
+    #         conn.execute('''
+    #             CREATE TABLE IF NOT EXISTS cards (
+    #                 id INTEGER PRIMARY KEY,
+    #                 name TEXT NOT NULL,
+    #                 attack INTEGER NOT NULL,
+    #                 health INTEGER NOT NULL,
+    #                 cost INTEGER NOT NULL
+    #             )
+    #         ''')
+    #         if not conn.execute("SELECT 1 FROM cards LIMIT 1").fetchone():
+    #             conn.executemany(
+    #                 "INSERT INTO cards (name, attack, health, cost) VALUES (?, ?, ?, ?)",
+    #                 [("Воин", 3, 5, 1), ("Лучник", 2, 3, 2), ("Маг", 4, 2, 3)]
+    #             )
 
     def get_card_by_id(self, card_id: int, player_id: int) -> Optional[Card]:
         with sqlite3.connect(self.db_path) as conn:

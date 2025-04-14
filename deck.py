@@ -40,9 +40,11 @@ class Deck:
 
     def check_db_structure(self) -> None:
         try:
-            self.cur.execute("SELECT name, attack, health, cost FROM cards LIMIT 1")
+            self.cur.execute('''SELECT name, attack, health, cost
+                                  FROM cards
+                                 LIMIT 1
+                             ''')
         except sqlite3.OperationalError:
-            # Если таблицы нет, создаём её
             self.init_db()
 
     def get_card_by_id(self, card_id: int, player_id: int) -> Optional[Card]:

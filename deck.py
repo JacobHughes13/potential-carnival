@@ -47,7 +47,7 @@ class Deck:
         except sqlite3.OperationalError:
             self.init_db()
 
-    def get_card_by_id(self, card_id: int, player_id: int) -> Optional[Card]:
+    def get_card_by_id(self, card_id: int, player_id: str) -> Optional[Card]:
         """Получить карту по ID из существующей БД"""
         self.cur.execute('''SELECT name, attack, health, cost
                                   FROM cards

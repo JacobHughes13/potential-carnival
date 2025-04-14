@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Optional
 import sqlite3
 import os
 from dataclasses import dataclass
@@ -15,24 +15,19 @@ class Card:
 
 class Deck:
     def __init__(self, db_path: str = 'BD/BD.db'):
-        self.grid: List[List[Optional[Card]]] = [[None for _ in range(4)] for _ in range(4)]
+        self.grid: list[list[Optional[Card]]] = [[None for _ in range(4)] for _ in range(4)]
         self.db_path = db_path
 
-        # Проверяем существование файла БД
-        db_exists = os.path.exists(self.db_path)
+        self.con = sqlite3.connect(self.db_path)
+        self.cur = self.con.cursor()
 
-        self.conn = sqlite3.connect(self.db_path)
-        self.cursor = self.conn.cursor()
-
-        if not db_exists:
-            self._init_db()
+        if not os.path.exists(self.db_path):
+            self.init_db()
         else:
-            # Просто проверяем структуру таблицы
-            self._check_db_structure()
+            self.check_db_structure()
 
-    def _init_db(self):
-        """Инициализация новой БД"""
-        self.cursor.execute('''
+    def init_db(self) -> None:
+        self.cur.execute('''
             CREATE TABLE cards (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
@@ -41,23 +36,24 @@ class Deck:
                 cost INTEGER NOT NULL
             )
         ''')
-        self.conn.commit()
+        self.con.commit()
 
-    def _check_db_structure(self):
-        """Проверка структуры существующей БД"""
+    def check_db_structure(self) -> None:
         try:
-            self.cursor.execute("SELECT name, attack, health, cost FROM cards LIMIT 1")
+            self.cur.execute("SELECT name, attack, health, cost FROM cards LIMIT 1")
         except sqlite3.OperationalError:
             # Если таблицы нет, создаём её
-            self._init_db()
+            self.init_db()
 
     def get_card_by_id(self, card_id: int, player_id: int) -> Optional[Card]:
         """Получить карту по ID из существующей БД"""
-        self.cursor.execute(
-            "SELECT name, attack, health, cost FROM cards WHERE id = ?",
-            (card_id,)
-        )
-        if result := self.cursor.fetchone():
+        self.cur.execute('''SELECT name, attack, health, cost
+                                  FROM cards
+                                 WHERE id = ?
+                             ''', (card_id,)
+                         )
+
+        if result := self.cur.fetchone():
             return Card(*result, player_id)
         return None
 
@@ -92,7 +88,7 @@ class Deck:
                 self.grid[1][col] = self.grid[2][col]
                 self.grid[2][col] = None
 
-    def battle_phase(self) -> Dict[int, int]:
+    def battle_phase(self) -> dict[int, int]:
         damage = {1: 0, 2: 0}
         for row in [1, 2]:
             for col in range(4):

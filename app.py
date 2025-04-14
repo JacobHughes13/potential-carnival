@@ -2,7 +2,7 @@ from flask import Flask, render_template, redirect, url_for
 from deck import Deck
 
 app = Flask(__name__)
-deck = Deck()
+deck = Deck('BD/BD.db')  # Явно указываем путь к вашей БД
 
 @app.route("/")
 def home():

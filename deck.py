@@ -10,7 +10,6 @@ class Card:
     attack: int
     health: int
     cost: int
-    player_id: int
 
 
 class Deck:
@@ -40,7 +39,7 @@ class Deck:
 
     def check_db_structure(self) -> None:
         try:
-            self.cur.execute('''SELECT name, attack, health, cost
+            self.cur.execute('''SELECT name, damage, health, cost
                                   FROM cards
                                  LIMIT 1
                              ''')
@@ -48,30 +47,30 @@ class Deck:
             self.init_db()
 
     def get_card_by_id(self, card_id: int, player_id: str) -> Optional[Card]:
-        """Получить карту по ID из существующей БД"""
-        self.cur.execute('''SELECT name, attack, health, cost
+        self.cur.execute('''SELECT name, damage, health, cost
                                   FROM cards
                                  WHERE id = ?
                              ''', (card_id,)
                          )
-
-        if result := self.cur.fetchone():
+        result = self.cur.fetchone()
+        if result:
             return Card(*result, player_id)
         return None
 
-    def place_card(self, card: Card, col: int) -> bool:
-        if card.player_id == 1:
+    def place_card(self, card: Card, player_id: int, col: int) -> bool:
+        print(player_id)
+        if player_id == 1:
             row = 0
-        elif card.player_id == 2:
+        elif player_id == 2:
             row = 3
         else:
             return False
 
         if self.grid[row][col] is not None:
             return False
-
-        self.grid[row][col] = card
-        return True
+        else:
+            self.grid[row][col] = card
+            return True
 
     def move_cards(self) -> None:
         for col in range(4):
@@ -90,17 +89,19 @@ class Deck:
                 self.grid[1][col] = self.grid[2][col]
                 self.grid[2][col] = None
 
-    def battle_phase(self) -> dict[int, int]:
+    def battle_phase(self, player_id) -> dict[int, int]:
         damage = {1: 0, 2: 0}
         for row in [1, 2]:
             for col in range(4):
-                if card := self.grid[row][col]:
-                    damage[3 - card.player_id] += card.attack
+                card = self.grid[row][col]
+                if card:
+                    damage[player_id] += card.attack
         return damage
 
     def remove_dead_cards(self) -> None:
         for row in range(4):
             for col in range(4):
-                if card := self.grid[row][col]:
+                card = self.grid[row][col]
+                if card:
                     if card.health <= 0:
                         self.grid[row][col] = None

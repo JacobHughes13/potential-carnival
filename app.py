@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for
+from flapsk import Flask, render_template, redirect, url_for
 from deck import Deck
 
 
@@ -13,16 +13,17 @@ def home() -> str:
 
 @app.route("/place_card/<int:player_id>/<int:card_id>/<int:col>")
 def place_card(player_id: int, card_id: int, col: int):
-    if card := deck.get_card_by_id(card_id, player_id):
+    card = deck.get_card_by_id(card_id, player_id)
+    if card:
         deck.place_card(card, col)
     return redirect(url_for("home"))
 
 
 @app.route("/end_turn")
 def end_turn():
-    deck.move_cards()
-    damage = deck.battle_phase()
     deck.remove_dead_cards()
+    deck.move_cards()
+    # damage = deck.battle_phase()
     return redirect(url_for("home"))
 
 

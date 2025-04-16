@@ -6,12 +6,21 @@ from dataclasses import dataclass
 
 @dataclass
 class Card:
+    id: int
     name: str
     attack: int
     health: int
     cost: int
 
 
+@dataclass
+class Player:
+    id: int
+    name: str
+    cards: list
+    health: int
+
+    
 class Deck:
     def __init__(self, db_path: str = 'BD/BD.db'):
         self.grid: list[list[Optional[Card]]] = [[None for _ in range(4)] for _ in range(4)]
@@ -46,22 +55,22 @@ class Deck:
         except sqlite3.OperationalError:
             self.init_db()
 
-    def get_card_by_id(self, card_id: int, player_id: str) -> Optional[Card]:
+    def get_card_by_id(self, card.id: int, player.id: str) -> Optional[Card]:
         self.cur.execute('''SELECT name, damage, health, cost
                                   FROM cards
                                  WHERE id = ?
-                             ''', (card_id,)
+                             ''', (card.id,)
                          )
         result = self.cur.fetchone()
         if result:
-            return Card(*result, player_id)
+            return Card(*result, player.id)
         return None
 
-    def place_card(self, card: Card, player_id: int, col: int) -> bool:
-        print(player_id)
-        if player_id == 1:
+    def place_card(self, card: Card, player.id: int, col: int) -> bool:
+        print(player.id)
+        if player.id == 1:
             row = 0
-        elif player_id == 2:
+        elif player.id == 2:
             row = 3
         else:
             return False

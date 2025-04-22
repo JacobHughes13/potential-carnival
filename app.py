@@ -5,10 +5,8 @@ import threading
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
-# Создаем объект Deck в основном потоке
 deck = Deck('BD/BD.db')
 
-# Блокировка для потокобезопасности
 deck_lock = threading.Lock()
 
 @app.route("/")
@@ -21,7 +19,7 @@ def pick_up_the_card(card_id: int):
     session['selected_card'] = card_id
     return redirect(url_for("home"))
 
-@app.route("/place_card/<int:row>/<int:col>")
+@app.route("/place_card/<int:row>/<int:col>") #todo избавиться от зависимоти row
 def place_card(row: int, col: int):
     current_player = session.get('current_player', 1)
     if 'selected_card' in session:
@@ -36,8 +34,11 @@ def end_turn():
     with deck_lock:
         deck.remove_dead_cards()
         deck.move_cards()
-        # Меняем текущего игрока
-        session['current_player'] = 2 if session.get('current_player', 1) == 1 else 1
+
+        if session.get('current_player', 1) == 1:
+            session['current_player'] = 2
+        else:
+            session['current_player'] = 1
     return redirect(url_for("home"))
 
 @app.route("/reset")

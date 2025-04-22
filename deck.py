@@ -20,7 +20,6 @@ class Deck:
         self._init_db_connection()
 
     def _init_db_connection(self) -> None:
-        # Добавляем check_same_thread=False и улучшаем обработку соединения
         self.con = sqlite3.connect(self.db_path, check_same_thread=False)
         self.cur = self.con.cursor()
 
@@ -83,19 +82,11 @@ class Deck:
             if self.grid[0][col] and not self.grid[1][col]:
                 self.grid[1][col] = self.grid[0][col]
                 self.grid[0][col] = None
-            elif self.grid[1][col] and not self.grid[2][col]:
-                self.grid[2][col] = self.grid[1][col]
-                self.grid[1][col] = None
-
-        for col in range(4):
-            if self.grid[3][col] and not self.grid[2][col]:
+            elif self.grid[3][col] and not self.grid[2][col]:
                 self.grid[2][col] = self.grid[3][col]
                 self.grid[3][col] = None
-            elif self.grid[2][col] and not self.grid[1][col]:
-                self.grid[1][col] = self.grid[2][col]
-                self.grid[2][col] = None
 
-    def battle_phase(self, player_id) -> dict[int, int]:
+    def battle_phase(self, player_id) -> dict[int, int]: # todo сдеалть чтоб работало
         damage = {1: 0, 2: 0}
         for row in [1, 2]:
             for col in range(4):

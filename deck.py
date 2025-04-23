@@ -6,19 +6,21 @@ from dataclasses import dataclass
 
 @dataclass
 class Card:
+    id: int
     name: str
     attack: int
     health: int
     cost: int
-    player_id: int
 
 
 class Deck:
-    def __init__(self, db_path: str = 'BD/BD.db'):
+    def __init__(self, db_path: str = 'BD/BD.db') -> None:
         self.grid: list[list[Optional[Card]]] = [[None for _ in range(4)] for _ in range(4)]
         self.db_path = db_path
+        self._init_db_connection()
 
-        self.con = sqlite3.connect(self.db_path)
+    def _init_db_connection(self) -> None:
+        self.con = sqlite3.connect(self.db_path, check_same_thread=False)
         self.cur = self.con.cursor()
 
         if not os.path.exists(self.db_path):
@@ -47,22 +49,24 @@ class Deck:
         except sqlite3.OperationalError:
             self.init_db()
 
-    def get_card_by_id(self, card_id: int, player_id: str) -> Optional[Card]:
-        """Получить карту по ID из существующей БД"""
-        self.cur.execute('''SELECT name, attack, health, cost
+    def get_card_by_id(self, card_id: int) -> Optional[Card]:
+        self.cur.execute('''SELECT id, name, attack, health, cost
                                   FROM cards
                                  WHERE id = ?
-                             ''', (card_id,)
-                         )
-
-        if result := self.cur.fetchone():
-            return Card(*result, player_id)
+                             ''', (card_id,))
+        result = self.cur.fetchone()
+        if result:
+            return Card(*result)
         return None
 
-    def place_card(self, card: Card, col: int) -> bool:
-        if card.player_id == 1:
+    def place_card(self, card_id: int, player_id: int, col: int) -> bool:
+        card = self.get_card_by_id(card_id)
+        if card is None:
+            return False
+
+        if player_id == 1:
             row = 0
-        elif card.player_id == 2:
+        elif player_id == 2:
             row = 3
         else:
             return False
@@ -78,29 +82,23 @@ class Deck:
             if self.grid[0][col] and not self.grid[1][col]:
                 self.grid[1][col] = self.grid[0][col]
                 self.grid[0][col] = None
-            elif self.grid[1][col] and not self.grid[2][col]:
-                self.grid[2][col] = self.grid[1][col]
-                self.grid[1][col] = None
-
-        for col in range(4):
-            if self.grid[3][col] and not self.grid[2][col]:
+            elif self.grid[3][col] and not self.grid[2][col]:
                 self.grid[2][col] = self.grid[3][col]
                 self.grid[3][col] = None
-            elif self.grid[2][col] and not self.grid[1][col]:
-                self.grid[1][col] = self.grid[2][col]
-                self.grid[2][col] = None
 
-    def battle_phase(self) -> dict[int, int]:
+    def battle_phase(self, player_id) -> dict[int, int]:  # TODO: сделать чтоб работало
         damage = {1: 0, 2: 0}
         for row in [1, 2]:
             for col in range(4):
-                if card := self.grid[row][col]:
-                    damage[3 - card.player_id] += card.attack
+                card = self.grid[row][col]
+                if card:
+                    damage[player_id] += card.attack
         return damage
 
     def remove_dead_cards(self) -> None:
         for row in range(4):
             for col in range(4):
-                if card := self.grid[row][col]:
+                card = self.grid[row][col]
+                if card:
                     if card.health <= 0:
                         self.grid[row][col] = None

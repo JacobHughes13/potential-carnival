@@ -23,8 +23,8 @@ def pick_up_the_card(card_id: int):
     return redirect(url_for("home"))
 
 
-@app.route("/place_card/<int:col>")  # TODO: избавится от зависимости row
-def place_card(col: int):
+@app.route("/place_card/<int:row>/<int:col>")  # TODO: избавится от зависимости row
+def place_card(row: int, col: int):
     current_player = session.get('current_player', 1)
     if 'selected_card' in session:
         with deck_lock:

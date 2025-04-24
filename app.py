@@ -13,8 +13,7 @@ def home() -> str:
     with deck_lock:
         return render_template("index.html",
                                grid=deck.grid,
-                               current_player=session.get('current_player', 1),
-                               damage_balance=deck.damage_balance)
+                               current_player=session.get('current_player', 1))
 
 
 @app.route("/pick_up_the_card/<int:card_id>")
@@ -34,22 +33,28 @@ def place_card(row: int, col: int):
     return redirect(url_for("home"))
 
 
-@app.route("/end_turn")
-def end_turn():
+@app.route("/player1_turn")
+def player1_turn():
     with deck_lock:
-        deck.remove_dead_cards()
-        deck.move_cards()
+        player_id = 1
+        deck.move_cards(player_id=player_id)
+        winner = deck.battle_phase(player_id=player_id)
+        session['current_player'] = 2
+        if winner:
+            return render_template("winner.html",
+                                   winner=winner)
+    return redirect(url_for("home"))
 
-        if deck.turn_stage == 0:
-            deck.turn_stage = 1
-            session['current_player'] = 2
-        else:
-            winner = deck.battle_phase()
-            deck.turn_stage = 0
-            session['current_player'] = 1
-            if winner:
-                return render_template("winner.html", winner=winner)
 
+@app.route("/player2_turn")
+def player2_turn():
+    with deck_lock:
+        player_id = 2
+        deck.move_cards(player_id=player_id)
+        winner = deck.battle_phase(player_id=player_id)
+        session['current_player'] = 1
+        if winner:
+            return render_template("winner.html", winner=winner)
     return redirect(url_for("home"))
 
 

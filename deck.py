@@ -27,7 +27,7 @@ class Card:
 
 
 class Deck:
-    def __init__(self, db_path: str = 'BD/BD.db') -> None:
+    def __init__(self, db_path: str = 'sqlite:///BD/BD.db') -> None:
         self.engine = create_engine(db_path, echo=False)
 
         SqlAlchemyBase.metadata.create_all(self.engine)

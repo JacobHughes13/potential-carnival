@@ -4,7 +4,7 @@ import threading
 
 app = Flask(__name__)
 app.secret_key = 'SUPER_SECRET_KEY'
-deck = Deck('BD/BD.db')
+deck = Deck('sqlite:///BD/BD.db')
 deck_lock = threading.Lock()
 
 
@@ -13,7 +13,8 @@ def home() -> str:
     with deck_lock:
         return render_template("index.html",
                                grid=deck.grid,
-                               current_player=session.get('current_player', 1))
+                               current_player=session.get('current_player', 1),
+                               damage_balance=deck.damage_balance)
 
 
 @app.route("/pick_up_the_card/<int:card_id>")
@@ -37,8 +38,8 @@ def place_card(row: int, col: int):
 def player1_turn():
     with deck_lock:
         player_id = 1
-        deck.move_cards(player_id=player_id)
         winner = deck.battle_phase(player_id=player_id)
+        deck.move_cards(player_id=player_id)
         session['current_player'] = 2
         if winner:
             return render_template("winner.html",
@@ -50,8 +51,8 @@ def player1_turn():
 def player2_turn():
     with deck_lock:
         player_id = 2
-        deck.move_cards(player_id=player_id)
         winner = deck.battle_phase(player_id=player_id)
+        deck.move_cards(player_id=player_id)
         session['current_player'] = 1
         if winner:
             return render_template("winner.html", winner=winner)

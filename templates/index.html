@@ -29,15 +29,15 @@
         <div class="battlefield">
             <div class="balance-indicator">
                 <h3>Весы урона: {{ damage_balance }}</h3>
-                <p>
-                    {% if damage_balance > 0 %}
-                         Преимущество Игрока 1
-                    {% elif damage_balance < 0 %}
-                         Преимущество Игрока 2
-                    {% else %}
-                         Равновесие
-                    {% endif %}
-                </p>
+                    <p class="{% if damage_balance > 0 %}positive-balance{% elif damage_balance < 0 %}negative-balance{% endif %}">
+                        {% if damage_balance > 0 %}
+                            Преимущество Игрока 1 ({{ damage_balance }})
+                        {% elif damage_balance < 0 %}
+                            Преимущество Игрока 2 ({{ -damage_balance }})
+                        {% else %}
+                            Равновесие
+                        {% endif %}
+                    </p>
             </div>
 
             <div class="grid-container">
@@ -83,8 +83,13 @@
         </div>
 
         <div class="controls">
-            <a href="/end_turn"
-               class="control-button">Завершить ход</a>
+            {% if current_player == 1 %}
+                <a href="/player1_turn"
+                   class="control-button">Завершить ход</a>
+            {% elif current_player == 2 %}
+                <a href="/player2_turn"
+                   class="control-button">Завершить ход</a>
+            {% endif %}
             <a href="/reset"
                class="control-button">Сбросить игру</a>
         </div>

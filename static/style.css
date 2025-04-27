@@ -179,3 +179,10 @@ h1 {
     font-size: 18px;
     color: #333;
 }
+.positive-balance {
+    color: var(--player1-color);
+}
+
+.negative-balance {
+    color: var(--player2-color);
+}

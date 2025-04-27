@@ -31,7 +31,7 @@ class Deck:
         db_card = session.query(Card).filter_by(id=card_id).first()
         session.close()
         if db_card:
-            return Card(db_card.id, db_card.name, db_card.attack, db_card.health, db_card.cost)
+            return db_card
         return None
 
     def place_card(self, card_id: int, player_id: int, col: int) -> bool:

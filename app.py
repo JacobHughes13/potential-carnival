@@ -4,7 +4,7 @@ import threading
 
 app = Flask(__name__)
 app.secret_key = 'SUPER_SECRET_KEY'
-deck = Deck('BD/BD.db')
+deck = Deck('sqlite:///BD/BD.db')
 deck_lock = threading.Lock()
 
 

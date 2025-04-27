@@ -1,12 +1,11 @@
 from typing import Optional
-from dataclasses import dataclass
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 SqlAlchemyBase = declarative_base()
 
 
-class CardModel(SqlAlchemyBase):
+class Card(SqlAlchemyBase):
     __tablename__ = 'cards'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -14,15 +13,6 @@ class CardModel(SqlAlchemyBase):
     attack = Column(Integer, nullable=False)
     health = Column(Integer, nullable=False)
     cost = Column(Integer, nullable=False)
-
-
-@dataclass
-class Card:
-    id: int
-    name: str
-    attack: int
-    health: int
-    cost: int
     ready_to_attack: bool = False
 
 
@@ -38,7 +28,7 @@ class Deck:
 
     def get_card_by_id(self, card_id: int) -> Optional[Card] | None:
         session = self.Session()
-        db_card = session.query(CardModel).filter_by(id=card_id).first()
+        db_card = session.query(Card).filter_by(id=card_id).first()
         session.close()
         if db_card:
             return Card(db_card.id, db_card.name, db_card.attack, db_card.health, db_card.cost)

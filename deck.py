@@ -1,8 +1,25 @@
 from typing import Optional
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base
+from werkzeug.security import generate_password_hash, check_password_hash
 
 SqlAlchemyBase = declarative_base()
+
+
+class User(SqlAlchemyBase):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
+
+
+class Friend(SqlAlchemyBase):
+    __tablename__ = 'friends'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    friend_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
 
 class Card(SqlAlchemyBase):

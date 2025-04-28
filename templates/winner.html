@@ -1,10 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
     <title>Победа!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Игрок {{ winner }} победил!</h1>
-    <a href="/reset">Сыграть снова</a>
+    <div class="game-container">
+        <h1 class="winner-message">ПОБЕДА!</h1>
+        <h2 class="turn-indicator">
+            {% if winner == 1 %}
+                Игрок 1 победил!
+            {% elif winner == 2 %}
+                Игрок 2 победил!
+            {% else %}
+                Ничья!
+            {% endif %}
+        </h2>
+
+        <div class="controls">
+            <a href="{{ url_for('reset') }}" class="control-button">🔄 Сыграть снова</a>
+            <a href="{{ url_for('home') }}" class="control-button">⬅️ На главную</a>
+        </div>
+    </div>
 </body>
 </html>

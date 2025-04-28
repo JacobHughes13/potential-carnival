@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Друзья</title>
+</head>
+<body>
+    <h1>Ваши друзья</h1>
+    <ul>
+        {% for friend in friends %}
+            <li>{{ friend[0] }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Добавить друга</h2>
+    <form method="post">
+        <input type="text"
+               name="friend_username"
+               placeholder="Имя друга"
+               required>
+        <button type="submit">Добавить</button>
+    </form>
+
+    <a href="/">На главную</a>
+</body>
+</html>

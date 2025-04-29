@@ -13,6 +13,7 @@
         <h2>Привет, {{ username }}</h2>
         <a href="/friends">Мои друзья</a> | <a href="/logout">Выйти</a>
         <h2 class="turn-indicator">Ход игрока {{ current_player }}</h2>
+        <h3>Монеты игрока {{ current_player }}: {{ coins[current_player] }}</h3>
 
         <div class="player-area player1">
             <h2>Игрок 1</h2>
@@ -31,7 +32,11 @@
         <div class="battlefield">
             <div class="balance-indicator">
                 <h3>Весы урона: {{ damage_balance }}</h3>
-                    <p class="{% if damage_balance > 0 %}positive-balance{% elif damage_balance < 0 %}negative-balance{% endif %}">
+                    <p class="{% if damage_balance > 0 %}
+                                 positive-balance
+                               {% elif damage_balance < 0 %}
+                                 negative-balance
+                               {% endif %}">
                         {% if damage_balance > 0 %}
                             Преимущество Игрока 1 ({{ damage_balance }})
                         {% elif damage_balance < 0 %}

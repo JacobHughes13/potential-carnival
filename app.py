@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, session, request, flash
 from deck import *
-from werkzeug.security import generate_password_hash, check_password_hash
+# from werkzeug.security import generate_password_hash, check_password_hash
 import threading
 
 app = Flask(__name__)
@@ -19,6 +19,7 @@ def home() -> str:
                                grid=deck.grid,
                                current_player=session.get('current_player', 1),
                                damage_balance=deck.damage_balance,
+                               coins=deck.coins,
                                username=session.get('username'))
 
 '''
@@ -127,6 +128,7 @@ def player1_turn():
         player_id = 1
         winner = deck.battle_phase(player_id=player_id)
         deck.move_cards(player_id=player_id)
+        deck.end_turn(player_id=player_id)
         session['current_player'] = 2
         if winner:
             return render_template("winner.html",
@@ -140,9 +142,11 @@ def player2_turn():
         player_id = 2
         winner = deck.battle_phase(player_id=player_id)
         deck.move_cards(player_id=player_id)
+        deck.end_turn(player_id=player_id)
         session['current_player'] = 1
         if winner:
-            return render_template("winner.html", winner=winner)
+            return render_template("winner.html",
+                                   winner=winner)
     return redirect(url_for("home"))
 
 

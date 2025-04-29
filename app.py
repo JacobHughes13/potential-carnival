@@ -21,7 +21,7 @@ def home() -> str:
                                damage_balance=deck.damage_balance,
                                username=session.get('username'))
 
-
+'''
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -101,6 +101,7 @@ def logout():
     session.pop('current_player', None)
     session.pop('selected_card', None)
     return redirect(url_for("login"))
+'''
 
 
 @app.route("/pick_up_the_card/<int:card_id>")

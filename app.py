@@ -11,8 +11,8 @@ deck_lock = threading.Lock()
 
 @app.route("/")
 def home() -> str:
-    if "user_id" not in session:
-        return redirect(url_for('login'))
+    # if "user_id" not in session:
+    #     return redirect(url_for('login'))
 
     with deck_lock:
         return render_template("index.html",

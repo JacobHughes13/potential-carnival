@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base
-from werkzeug.security import generate_password_hash, check_password_hash
+# from werkzeug.security import generate_password_hash, check_password_hash
 
 SqlAlchemyBase = declarative_base()
 
@@ -39,9 +39,12 @@ class Deck:
 
         SqlAlchemyBase.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
-        self.grid: list[list[Optional[Card]]] = [[None for _ in range(4)] for _ in range(4)]
+        self.grid: list[list[Optional[Card]]] = [[None for _ in range(5)] for _ in range(4)]
         self.damage_balance = 0
         self.turn_stage = 0  # 0: p1 —> p2, 1: p2 -> p1
+        self.coins = {1: 1, 2: 1}
+        self.income = {1: 1, 2: 1}
+        self.turn_count = {1: 0, 2: 0}
 
     def get_card_by_id(self, card_id: int) -> Optional[Card] | None:
         session = self.Session()
@@ -53,13 +56,14 @@ class Deck:
 
     def place_card(self, card_id: int, player_id: int, col: int) -> bool:
         card = self.get_card_by_id(card_id)
-        if card is None:
+        if card is None or card.cost > self.coins[player_id]:
             return False
 
         row = 0 if player_id == 1 else 3
         if self.grid[row][col] is not None:
             return False
 
+        self.coins[player_id] -= card.cost
         card.ready_to_attack = False
         self.grid[row][col] = card
         return True
@@ -113,6 +117,12 @@ class Deck:
                     self.grid[row][col] = None
 
     def reset(self) -> None:
-        self.grid = [[None for _ in range(4)] for _ in range(4)]
+        self.grid = [[None for _ in range(5)] for _ in range(4)]
         self.damage_balance = 0
         self.turn_stage = 0
+
+    def end_turn(self, player_id: int) -> None:
+        self.turn_count[player_id] += 1
+        if self.turn_count[player_id] % 3 == 0:
+            self.income[player_id] += 1
+        self.coins[player_id] += self.income[player_id]

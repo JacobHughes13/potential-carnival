@@ -126,3 +126,50 @@ class Deck:
         if self.turn_count[player_id] % 3 == 0:
             self.income[player_id] += 1
         self.coins[player_id] += self.income[player_id]
+        
+    def Boneca_Ambamabu(self):
+        # передвигается на соседнюю клетку
+        pass
+
+    def Serbinyo_Carshippinyo(self):
+        # ХЗ
+        pass
+
+    def Purri_Purrani_Nyankani(self):
+        # все обязаны атакават его
+        pass
+
+    def Babadubababadududubadududubadu(self):
+        # камикадзе
+        pass
+
+    def Talpa_Di_Ferro(self):
+        # нельзя ударить не в его ход
+        pass
+
+    def Lirili_Larila(self):
+        # ходить раз в 2 хода
+        pass
+    def Coccodrillo_Formaggioso(self):
+        # когда его бьют враг хилится + каждый ход отдает по хп союзникам по бокам
+        pass
+
+    def Baranito_Tankito(self):
+        # стреляет по ближайшему врагу, чем дальше враг тем меньше урона. Не способен стрелять по игроку пока есть враги
+        pass
+
+    def Tus_tus_tus_tus_tus_Kaktus_tus_tus_kutus_kutus(self):
+        # выбирает свой целью врага последним убившего союзника иначе Выбирает свой целью врага с наибольшим уроном
+        pass
+
+    def Pot_hotspot(self):
+        # ворует 1 урон и 1 хп у каждого союзника рядом, не может убить союзника
+        pass
+
+    def Udin_din_din_din_dun(self):
+        # получает -1 к урону есть есть союзники рядом
+        pass
+
+    def Dangerito_Bearito(self):
+        # забирает 1 урон и 1 хп у соседних врагов
+        pass

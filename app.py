@@ -16,7 +16,7 @@ def home():
 def main_menu():
     return render_template("main_menu.html", username=session.get('username'))
 
-@app.route("/play_menu")
+@app.route("/play")
 def play():
     if "user_id" not in session:
         return redirect(url_for('login'))
@@ -123,7 +123,7 @@ def logout():
 @app.route("/pick_up_the_card/<int:card_id>")
 def pick_up_the_card(card_id: int):
     session['selected_card'] = card_id
-    return redirect(url_for("home"))
+    return redirect(url_for("play"))
 
 
 @app.route("/place_card/<int:row>/<int:col>")
@@ -133,7 +133,7 @@ def place_card(row: int, col: int):
         success = deck.place_card(session['selected_card'], current_player, col)
         if success:
             session.pop('selected_card', None)
-    return redirect(url_for("home"))
+    return redirect(url_for("play"))
 
 
 @app.route("/player1_turn")
@@ -146,7 +146,7 @@ def player1_turn():
     if winner:
         return render_template("winner.html",
                                winner=winner)
-    return redirect(url_for("home"))
+    return redirect(url_for("play_menu"))
 
 
 @app.route("/player2_turn")
@@ -159,7 +159,7 @@ def player2_turn():
     if winner:
         return render_template("winner.html",
                                winner=winner)
-    return redirect(url_for("home"))
+    return redirect(url_for("play"))
 
 
 @app.route("/reset")
@@ -167,7 +167,7 @@ def reset():
     deck.reset()
     session['current_player'] = 1
     session.pop('selected_card', None)
-    return redirect(url_for("home"))
+    return redirect(url_for("play"))
 
 
 def main() -> None:

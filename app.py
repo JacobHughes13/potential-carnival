@@ -15,7 +15,8 @@ def home():
 
 @app.route("/main_menu")
 def main_menu():
-    return render_template("main_menu.html", username=session.get('username'))
+    return render_template("main_menu.html",
+                           username=session.get('username'))
 
 
 @app.route("/play")

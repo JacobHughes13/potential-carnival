@@ -2,41 +2,39 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Регистрация</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap"
-          rel="stylesheet">
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <title>Регистрация | Card Battle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="game-container">
-        <h1>📝 Регистрация</h1>
+    <div class="game-container auth-container fade-in">
+        <div class="auth-header">
+            <h1 class="auth-title">Создать аккаунт</h1>
+            <p class="auth-subtitle">Присоединяйтесь к эпическим битвам</p>
+        </div>
 
-        <form action="{{ url_for('register') }}"
-              method="POST"
-              class="auth-form">
-            <input type="text"
-                   name="username"
-                   placeholder="Имя пользователя"
-                   required>
-            <input type="password"
-                   name="password"
-                   placeholder="Пароль"
-                   required>
-            <input type="password"
-                   name="confirm_password"
-                   placeholder="Повторите пароль"
-                   required>
+        <form action="{{ url_for('register') }}" method="POST" class="auth-form">
+            <div class="input-group">
+                <input type="text" id="reg-username" name="username" placeholder=" " required>
+                <label for="reg-username">Имя пользователя</label>
+            </div>
 
-            <button type="submit"
-                    class="control-button">Создать аккаунт</button>
+            <div class="input-group">
+                <input type="password" id="reg-password" name="password" placeholder=" " required>
+                <label for="reg-password">Пароль</label>
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="confirm-password" name="confirm_password" placeholder=" " required>
+                <label for="confirm-password">Подтвердите пароль</label>
+            </div>
+
+            <button type="submit" class="auth-button">Создать аккаунт</button>
         </form>
 
         <div class="auth-links">
-            <p>Уже есть аккаунт?
-                <a href="{{ url_for('login') }}">Войти</a>
-            </p>
-            <a href="{{ url_for('home') }}">⬅️ На главную</a>
+            <p>Уже есть аккаунт? <a href="{{ url_for('login') }}" class="auth-link">Войти</a></p>
+            <a href="{{ url_for('main_menu') }}" class="auth-link">← Вернуться на главную</a>
         </div>
     </div>
 </body>

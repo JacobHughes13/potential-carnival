@@ -2,32 +2,50 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Главное меню</title>
+    <title>Главное меню | Card Battle</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="game-container">
-        <div class="header">
+    <div class="game-container menu-container fade-in">
+        <div class="menu-header">
             <h1 class="title pulse">⚔️ CARD BATTLE ⚔️</h1>
-            <div class="user-greeting">
-                {% if username %}
-                    <p>Добро пожаловать, <strong>{{ username }}</strong></p>
-                {% else %}
-                    <p>Добро пожаловать, Гость</p>
-                {% endif %}
-            </div>
+            {% if username %}
+                <p class="auth-subtitle">Добро пожаловать, <strong>{{ username }}</strong></p>
+            {% else %}
+                <p class="auth-subtitle">Войдите, чтобы начать игру</p>
+            {% endif %}
         </div>
 
-        <div class="menu-buttons">
-            <a href="{{ url_for('play') }}" class="menu-button">🎮 Начать игру</a>
-            <a href="{{ url_for('friends') }}" class="menu-button">👥 Друзья</a>
-            <a href="{{ url_for('settings') }}" class="menu-button">⚙️ Настройки</a>
+        <div class="menu-cards">
+            <a href="{{ url_for('play') }}" class="menu-card">
+                <div class="menu-card-icon">🎮</div>
+                <h3 class="menu-card-title">Начать игру</h3>
+                <p class="menu-card-desc">Сразитесь с противником в эпической битве</p>
+                <button class="control-button">Играть</button>
+            </a>
+
+            <a href="{{ url_for('friends') }}" class="menu-card">
+                <div class="menu-card-icon">👥</div>
+                <h3 class="menu-card-title">Друзья</h3>
+                <p class="menu-card-desc">Управляйте списком друзей</p>
+                <button class="control-button">Открыть</button>
+            </a>
+
             {% if username %}
-                <a href="{{ url_for('logout') }}" class="menu-button">🚪 Выйти</a>
+                <a href="{{ url_for('logout') }}" class="menu-card">
+                    <div class="menu-card-icon">🚪</div>
+                    <h3 class="menu-card-title">Выйти</h3>
+                    <p class="menu-card-desc">Завершите текущую сессию</p>
+                    <button class="control-button">Выйти</button>
+                </a>
             {% else %}
-                <a href="{{ url_for('login') }}" class="menu-button">🔑 Войти</a>
-                <a href="{{ url_for('register') }}" class="menu-button">📝 Регистрация</a>
+                <a href="{{ url_for('login') }}" class="menu-card">
+                    <div class="menu-card-icon">🔑</div>
+                    <h3 class="menu-card-title">Войти</h3>
+                    <p class="menu-card-desc">Войдите в свой аккаунт</p>
+                    <button class="control-button">Войти</button>
+                </a>
             {% endif %}
         </div>
     </div>

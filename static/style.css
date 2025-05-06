@@ -229,3 +229,34 @@ h2, h3 {
 .auth-links a:hover {
     text-decoration: underline;
 }
+
+.title {
+    text-align: center;
+    font-size: 3.5rem;
+    margin-bottom: 50px;
+    color: #43b581;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+.menu-button {
+    background: #7289da;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 1.2rem;
+    width: 200px;
+    text-align: center;
+    transition: transform 0.2s, background 0.3s;
+}
+
+.menu-button:hover {
+    background: #5b6eae;
+    transform: scale(1.05);
+}

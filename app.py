@@ -1,28 +1,44 @@
 from flask import Flask, render_template, redirect, url_for, session, request, flash
 from deck import *
-# from werkzeug.security import generate_password_hash, check_password_hash
-import threading
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = 'SUPER_SECRET_KEY'
 deck = Deck('sqlite:///BD/BD.db')
-deck_lock = threading.Lock()
+
 
 
 @app.route("/")
-def home() -> str:
-    # if "user_id" not in session:
-    #     return redirect(url_for('login'))
+def home():
+    return redirect(url_for("main_menu"))  # Перенаправляем на главное меню
 
-    with deck_lock:
-        return render_template("index.html",
-                               grid=deck.grid,
-                               current_player=session.get('current_player', 1),
-                               damage_balance=deck.damage_balance,
-                               coins=deck.coins,
-                               username=session.get('username'))
+@app.route("/main_menu")
+def main_menu():
+    return render_template("main_menu.html", username=session.get('username'))
 
-'''
+@app.route("/play_menu")
+def play():
+    if "user_id" not in session:
+        return redirect(url_for('login'))
+
+    return render_template("index.html",
+                           grid=deck.grid,
+                           current_player=session.get('current_player', 1),
+                           damage_balance=deck.damage_balance,
+                           coins=deck.coins,
+                           username=session.get('username'))
+
+@app.route("/settings")
+def settings():
+    return "Настройки (в разработке)"  # Заглушка
+
+@app.route("/profile")
+def profile():
+    if "username" not in session:
+        return redirect(url_for("login"))
+    return f"Профиль игрока {session['username']}"
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -102,7 +118,6 @@ def logout():
     session.pop('current_player', None)
     session.pop('selected_card', None)
     return redirect(url_for("login"))
-'''
 
 
 @app.route("/pick_up_the_card/<int:card_id>")
@@ -115,47 +130,43 @@ def pick_up_the_card(card_id: int):
 def place_card(row: int, col: int):
     current_player = session.get('current_player', 1)
     if 'selected_card' in session:
-        with deck_lock:
-            success = deck.place_card(session['selected_card'], current_player, col)
-            if success:
-                session.pop('selected_card', None)
+        success = deck.place_card(session['selected_card'], current_player, col)
+        if success:
+            session.pop('selected_card', None)
     return redirect(url_for("home"))
 
 
 @app.route("/player1_turn")
 def player1_turn():
-    with deck_lock:
-        player_id = 1
-        winner = deck.battle_phase(player_id=player_id)
-        deck.move_cards(player_id=player_id)
-        deck.end_turn(player_id=player_id)
-        session['current_player'] = 2
-        if winner:
-            return render_template("winner.html",
-                                   winner=winner)
+    player_id = 1
+    winner = deck.battle_phase(player_id=player_id)
+    deck.move_cards(player_id=player_id)
+    deck.end_turn(player_id=player_id)
+    session['current_player'] = 2
+    if winner:
+        return render_template("winner.html",
+                               winner=winner)
     return redirect(url_for("home"))
 
 
 @app.route("/player2_turn")
 def player2_turn():
-    with deck_lock:
-        player_id = 2
-        winner = deck.battle_phase(player_id=player_id)
-        deck.move_cards(player_id=player_id)
-        deck.end_turn(player_id=player_id)
-        session['current_player'] = 1
-        if winner:
-            return render_template("winner.html",
-                                   winner=winner)
+    player_id = 2
+    winner = deck.battle_phase(player_id=player_id)
+    deck.move_cards(player_id=player_id)
+    deck.end_turn(player_id=player_id)
+    session['current_player'] = 1
+    if winner:
+        return render_template("winner.html",
+                               winner=winner)
     return redirect(url_for("home"))
 
 
 @app.route("/reset")
 def reset():
-    with deck_lock:
-        deck.reset()
-        session['current_player'] = 1
-        session.pop('selected_card', None)
+    deck.reset()
+    session['current_player'] = 1
+    session.pop('selected_card', None)
     return redirect(url_for("home"))
 
 

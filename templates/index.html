@@ -10,8 +10,7 @@
 <body>
     <div class="game-container">
         <h1>⚔️ CARD BATTLE ⚔️</h1>
-        <h2>Привет, {{ username }}</h2>
-        <a href="/friends">Мои друзья</a> | <a href="/logout">Выйти</a>
+        <a href="/friends">Мои друзья</a> | <a href="/logout">Выйти</a> | <a href="{{ url_for('main_menu') }}" class="control-button">Главное меню</a>
         <h2 class="turn-indicator">Ход игрока {{ current_player }}</h2>
         <h3>Монеты игрока {{ current_player }}: {{ coins[current_player] }}</h3>
 
@@ -20,11 +19,11 @@
             <div class="card-selection">
                 {% if current_player == 1 %}
                 <a href="/pick_up_the_card/0"
-                   class="card-preview">Воин (⚔️3 ❤️5)</a>
+                   class="card-preview">Карта1</a>
                 <a href="/pick_up_the_card/1"
-                   class="card-preview">Лучник (⚔️2 ❤️3)</a>
+                   class="card-preview">Карта2</a>
                 <a href="/pick_up_the_card/2"
-                   class="card-preview">Маг (⚔️4 ❤️2)</a>
+                   class="card-preview">Карта3</a>
                 {% endif %}
             </div>
         </div>

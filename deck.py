@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base
-# from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 SqlAlchemyBase = declarative_base()
 

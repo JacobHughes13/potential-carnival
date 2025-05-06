@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Главное меню</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">⚔️ CARD BATTLE ⚔️</h1>
+        <h2>Привет, {{ username }}</h2>
+        <div class="menu-buttons">
+            <a href="{{ url_for('play') }}" class="menu-button">Играть</a>
+            <a href="{{ url_for('settings') }}" class="menu-button">Настройки</a>
+            {% if username %}
+                <a href="{{ url_for('profile') }}" class="menu-button">Профиль</a>
+                <a href="{{ url_for('logout') }}" class="menu-button">Выйти</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="menu-button">Войти</a>
+                <a href="{{ url_for('register') }}" class="menu-button">Регистрация</a>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

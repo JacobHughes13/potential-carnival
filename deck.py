@@ -39,7 +39,7 @@ class Deck:
 
         SqlAlchemyBase.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
-        self.grid: list[list[Optional[Card]]] = [[None for _ in range(4)] for _ in range(4)]
+        self.grid: list[list[Optional[Card]]] = [[None for _ in range(5)] for _ in range(4)]
         self.damage_balance = 0
         self.turn_stage = 0  # 0: p1 —> p2, 1: p2 -> p1
         self.coins = {1: 1, 2: 1}
@@ -70,20 +70,20 @@ class Deck:
 
     def move_cards(self, player_id: int) -> None:
         if player_id == 1:
-            for col in range(4):
+            for col in range(5):
                 if self.grid[1][col] is None and self.grid[0][col]:
                     self.grid[1][col] = self.grid[0][col]
                     self.grid[0][col] = None
                     self.grid[1][col].ready_to_attack = True
         elif player_id == 2:
-            for col in range(4):
+            for col in range(5):
                 if self.grid[2][col] is None and self.grid[3][col]:
                     self.grid[2][col] = self.grid[3][col]
                     self.grid[3][col] = None
                     self.grid[2][col].ready_to_attack = True
 
     def battle_phase(self, player_id: int) -> Optional[int] | None:
-        for col in range(4):
+        for col in range(5):
             if player_id == 1:
                 attacker = self.grid[1][col]
                 defender = self.grid[2][col]
@@ -111,7 +111,7 @@ class Deck:
 
     def remove_dead_cards(self) -> None:
         for row in range(4):
-            for col in range(4):
+            for col in range(5):
                 card = self.grid[row][col]
                 if card and card.health <= 0:
                     self.grid[row][col] = None
@@ -175,4 +175,24 @@ class Deck:
 
     def Dangerito_Bearito(self):
         # забирает 1 урон и 1 хп у соседних врагов
+        pass
+
+    def Bombombini_Gusini(self):
+        # получает бафы если есть bombordilo crocodilo рядом
+        pass
+
+    def Tung_Tung_Tung_Sahur(self):
+        # 50 % застанить врага
+        pass
+
+    def Bobritto_Bandito(self):
+        # при атаке отбирает деньги
+        pass
+
+    def Tralalelo_Tralala(self):
+        # шанс уклонения
+        pass
+
+    def Bombardino_Crocodillo(self):
+        # бьёт всех врагов стразу
         pass

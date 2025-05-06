@@ -65,7 +65,7 @@ h2, h3 {
 .grid-container {
     display: grid;
     grid-template-rows: repeat(4, 80px);
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
     margin-top: 20px;
 }

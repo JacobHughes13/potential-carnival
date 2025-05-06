@@ -3,34 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <title>Вход</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap"
-          rel="stylesheet">
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="game-container">
-        <h1>🔐 Вход</h1>
+        <div class="header">
+            <h1 class="title">🔐 Вход</h1>
+        </div>
 
         <form action="{{ url_for('login') }}" method="POST" class="auth-form">
-            <input type="text"
-                   name="username"
-                   placeholder="Имя пользователя"
-                   required>
-            <input type="password"
-                   name="password"
-                   placeholder="Пароль"
-                   required>
-
-            <button type="submit"
-                    class="control-button">Войти</button>
+            <input type="text" name="username" placeholder="Имя пользователя" required>
+            <input type="password" name="password" placeholder="Пароль" required>
+            <button type="submit" class="control-button">Войти</button>
         </form>
 
         <div class="auth-links">
-            <p>Нет аккаунта?
-                <a href="{{ url_for('register') }}">Зарегистрироваться</a>
-            </p>
-            <a href="{{ url_for('home') }}">⬅️ На главную</a>
+            <p>Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрируйтесь</a></p>
+            <a href="{{ url_for('main_menu') }}" class="control-button">← На главную</a>
         </div>
     </div>
 </body>

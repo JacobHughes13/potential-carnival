@@ -2,56 +2,58 @@
 <html>
 <head>
     <title>Card Battle</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap"
-          rel="stylesheet">
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-    <div class="game-container">
-        <h1>⚔️ CARD BATTLE ⚔️</h1>
-        <a href="/friends" class="control-button">Мои друзья</a>
-        <a href="/main_menu" class="control-button">Главное меню</a>
-        <h2 class="turn-indicator">Ход игрока {{ current_player }}</h2>
-        <h3>Монеты игрока {{ current_player }}: {{ coins[current_player] }}</h3>
+    <div class="game-container game-layout">
+        <!-- Левая панель -->
+        <div class="side-panel">
+            <h1 class="game-title">⚔️ CARD BATTLE ⚔️</h1>
 
-        <div class="player-area player1">
-            <h2>Игрок 1</h2>
-            <div class="card-selection">
+            <div class="player-info">
+                <h2>Ход игрока {{ current_player }}</h2>
+                <p><strong>Монеты:</strong> {{ coins[current_player] }} 💰</p>
+                <div class="balance-indicator">
+                    <p><strong>Баланс:</strong> {{ damage_balance }}</p>
+<!--                    <div class="balance-bar" style="&#45;&#45;balance: {{ damage_balance }}%"></div>-->
+                </div>
+            </div>
+
+            <div class="controls">
+                <a href="/friends" class="control-button">👥 Друзья</a>
+                <a href="/main_menu" class="control-button">🏠 Главное меню</a>
                 {% if current_player == 1 %}
-                <a href="/pick_up_the_card/0"
-                   class="card-preview">Карта1</a>
-                <a href="/pick_up_the_card/1"
-                   class="card-preview">Карта2</a>
-                <a href="/pick_up_the_card/2"
-                   class="card-preview">Карта3</a>
+                    <a href="/player1_turn" class="control-button">⏭️ Завершить ход</a>
+                {% elif current_player == 2 %}
+                    <a href="/player2_turn" class="control-button">⏭️ Завершить ход</a>
                 {% endif %}
+                <a href="/reset" class="control-button">🔄 Сбросить игру</a>
+            </div>
+
+            <div class="player-area">
+                <h3>Ваши карты:</h3>
+                <div class="card-selection">
+                    {% if current_player == 1 %}
+                    <a href="/pick_up_the_card/0" class="card-preview">1</a>
+                    <a href="/pick_up_the_card/1" class="card-preview">2</a>
+                    <a href="/pick_up_the_card/2" class="card-preview">3</a>
+                    {% elif current_player == 2 %}
+                    <a href="/pick_up_the_card/2" class="card-preview">3</a>
+                    <a href="/pick_up_the_card/1" class="card-preview">2</a>
+                    <a href="/pick_up_the_card/0" class="card-preview">1</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
+        <!-- Игровое поле -->
         <div class="battlefield">
-            <div class="balance-indicator">
-                <h3>Весы урона: {{ damage_balance }}</h3>
-                    <p class="{% if damage_balance > 0 %}
-                                 positive-balance
-                               {% elif damage_balance < 0 %}
-                                 negative-balance
-                               {% endif %}">
-                        {% if damage_balance > 0 %}
-                            Преимущество Игрока 1 ({{ damage_balance }})
-                        {% elif damage_balance < 0 %}
-                            Преимущество Игрока 2 ({{ -damage_balance }})
-                        {% else %}
-                            Равновесие
-                        {% endif %}
-                    </p>
-            </div>
-
             <div class="grid-container">
                 {% for row_idx in range(4) %}
-                <div class="grid-row">
                     {% for col_idx in range(5) %}
-                    <div class="grid-cell">
+                    <div class="grid-cell {% if not grid[row_idx][col_idx] and ((current_player == 1 and row_idx == 0) or (current_player == 2 and row_idx == 3)) %}empty{% endif %}">
                         {% if grid[row_idx][col_idx] %}
                         <div class="card player{{ grid[row_idx][col_idx].player_id }}">
                             <div class="card-name">{{ grid[row_idx][col_idx].name }}</div>
@@ -62,43 +64,15 @@
                         </div>
                         {% else %}
                             {% if (current_player == 1 and row_idx == 0) or (current_player == 2 and row_idx == 3) %}
-                            <a href="/place_card/{{ row_idx }}/{{ col_idx }}"
-                               class="empty-slot">Поставить карту</a>
-                            {% else %}
-                            <div class="empty-slot">Пусто</div>
+                            <a href="/place_card/{{ row_idx }}/{{ col_idx }}" class="empty-slot">
+                                <div class="slot-content">+</div>
+                            </a>
                             {% endif %}
                         {% endif %}
                     </div>
                     {% endfor %}
-                </div>
                 {% endfor %}
             </div>
-        </div>
-
-        <div class="player-area player2">
-            <h2>Игрок 2</h2>
-            <div class="card-selection">
-                {% if current_player == 2 %}
-                <a href="/pick_up_the_card/0"
-                   class="card-preview">Воин (⚔️3 ❤️5)</a>
-                <a href="/pick_up_the_card/1"
-                   class="card-preview">Лучник (⚔️2 ❤️3)</a>
-                <a href="/pick_up_the_card/2"
-                   class="card-preview">Маг (⚔️4 ❤️2)</a>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="controls">
-            {% if current_player == 1 %}
-                <a href="/player1_turn"
-                   class="control-button">Завершить ход</a>
-            {% elif current_player == 2 %}
-                <a href="/player2_turn"
-                   class="control-button">Завершить ход</a>
-            {% endif %}
-            <a href="/reset"
-               class="control-button">Сбросить игру</a>
         </div>
     </div>
 </body>

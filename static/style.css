@@ -1,262 +1,310 @@
+:root {
+    --primary: #5865F2;
+    --secondary: #EB459E;
+    --success: #57F287;
+    --danger: #ED4245;
+    --dark: #23272A;
+    --light: #FFFFFF;
+    --background: #36393F;
+    --card-bg: #2C2F33;
+    --text-light: rgba(255, 255, 255, 0.9);
+    --text-muted: rgba(255, 255, 255, 0.6);
+}
+
 body {
     margin: 0;
     padding: 0;
-    font-family: 'Roboto Slab', serif;
-    background: linear-gradient(to right, #232526, #414345);
-    color: #fff;
+    font-family: 'Roboto Slab', sans-serif;
+    background: var(--background);
+    color: var(--light);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-h1 {
-    margin-top: 20px;
-    font-size: 3rem;
-    text-shadow: 2px 2px 5px #000;
-}
-
-h2, h3 {
-    text-align: center;
-}
-
 .game-container {
-    width: 90%;
-    max-width: 1200px;
-    background: #2c2f33;
+    width: 95%;
+    max-width: 1400px;
+    background: var(--dark);
     border-radius: 15px;
     padding: 20px;
-    margin-top: 20px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    margin: 20px 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-.player-area {
-    margin: 20px 0;
-    padding: 10px;
-    background: #36393f;
+.game-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+}
+
+/* Левая панель */
+.side-panel {
+    background: var(--dark);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.game-title {
+    font-size: 2rem;
+    margin: 0 0 20px 0;
+    padding-bottom: 15px;
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-align: center;
+    border-bottom: 2px solid var(--primary);
+}
+
+.player-info {
+    background: rgba(44, 47, 51, 0.7);
+    padding: 15px;
     border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.player-info h2 {
+    margin-top: 0;
+    color: var(--primary);
+}
+
+.balance-indicator {
+    margin-top: 10px;
+}
+
+.balance-bar {
+    height: 10px;
+    background: linear-gradient(to right,
+        var(--danger) 0%,
+        var(--danger) 50%,
+        var(--success) 50%,
+        var(--success) 100%);
+    border-radius: 5px;
+    margin-top: 5px;
+    position: relative;
+}
+
+.balance-bar::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: white;
+    transform: translateX(-50%);
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+/* Кнопки */
+.control-button, .menu-button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    text-align: center;
+    font-weight: 500;
+}
+
+.control-button:hover, .menu-button:hover {
+    background: #4752C4;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Карты игрока */
+.player-area {
+    margin-top: auto;
+    padding: 15px;
+    background: rgba(35, 39, 42, 0.5);
+    border-radius: 10px;
+}
+
+.player-area h3 {
+    margin-top: 0;
+    color: var(--secondary);
 }
 
 .card-selection {
     display: flex;
-    justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .card-preview {
-    background: #7289da;
+    display: block;
+    padding: 10px;
+    background: var(--primary);
     color: white;
-    padding: 10px 20px;
     border-radius: 8px;
     text-decoration: none;
-    font-weight: bold;
-    transition: background 0.3s;
+    transition: all 0.2s ease;
+    text-align: center;
+    font-size: 0.95rem;
 }
 
 .card-preview:hover {
-    background: #5b6eae;
+    background: var(--secondary);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* Игровое поле */
 .battlefield {
-    margin: 30px 0;
+    grid-column: 2;
+    height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
 }
 
 .grid-container {
+    flex-grow: 1;
     display: grid;
-    grid-template-rows: repeat(4, 80px);
+    grid-template-rows: repeat(4, 1fr);
     grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-    margin-top: 20px;
-}
-
-.grid-row {
-    display: contents;
+    gap: 75px;
+    margin-top: 0;
 }
 
 .grid-cell {
-    background: #99aab5;
+    min-height: 175px;
+    min-width: 175px;
+    background: var(--card-bg);
     border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    text-align: center;
     position: relative;
     overflow: hidden;
-    box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+    transition: all 0.2s ease;
 }
 
+.grid-cell.empty {
+    cursor: pointer;
+    background: rgba(114, 137, 218, 0.1);
+}
+
+.grid-cell.empty:hover {
+    background: rgba(114, 137, 218, 0.3);
+}
+
+.empty-slot {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.slot-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.3);
+    transition: all 0.2s ease;
+}
+
+.empty:hover .slot-content {
+    color: rgba(255, 255, 255, 0.8);
+    transform: scale(1.2);
+}
+
+/* Карты на поле */
 .card {
-    background: #5865f2;
-    width: 90%;
-    height: 90%;
-    border-radius: 10px;
-    padding: 5px;
+    padding: 10px;
+    height: 100%;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, rgba(88, 101, 242, 0.3), rgba(235, 69, 158, 0.3));
+}
+
+.player1 .card {
+    border: 2px solid var(--primary);
+}
+
+.player2 .card {
+    border: 2px solid var(--secondary);
 }
 
 .card-name {
     font-size: 1rem;
-    margin-bottom: 5px;
+    font-weight: bold;
+    margin: 0 0 5px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
 }
 
 .card-stats {
     display: flex;
-    gap: 5px;
-    font-size: 0.9rem;
-}
-
-.empty-slot {
-    color: #2c2f33;
-    font-size: 0.9rem;
-    cursor: pointer;
-    text-decoration: none;
-}
-
-.empty-slot:hover {
-    background: #f6f6f6;
-    color: #2c2f33;
-}
-
-.controls {
-    margin-top: 20px;
-    text-align: center;
-}
-
-.control-button {
-    background: #43b581;
-    color: white;
-    padding: 12px 24px;
-    margin: 5px;
-    border: none;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 1rem;
-    transition: background 0.3s;
-}
-
-.control-button:hover {
-    background: #3ca374;
-}
-
-.balance-indicator {
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.positive-balance {
-    color: #43b581;
-    font-weight: bold;
-}
-
-.negative-balance {
-    color: #f04747;
-    font-weight: bold;
-}
-
-.winner-message {
-    font-size: 2rem;
-    color: #43b581;
-    text-align: center;
-    margin-top: 50px;
-}
-
-.card-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-.card-table th, .card-table td {
-    border: 1px solid #ccc;
-    padding: 10px;
-    text-align: center;
-    background: #40444b;
-}
-
-.card-table th {
-    background: #7289da;
-    color: white;
-}
-
-.card-table tr:nth-child(even) {
-    background: #36393f;
-}
-
-.card-table tr:hover {
-    background: #5865f2;
-}
-
-.auth-form {
-    display: flex;
-    flex-direction: column;
+    justify-content: center;
     gap: 15px;
-    margin-top: 20px;
+    font-size: 0.9rem;
 }
 
-.auth-form input {
-    padding: 10px;
-    font-size: 16px;
-    border-radius: 10px;
-    border: none;
-    background: #36393f;
-    color: #fff;
+/* Адаптивность */
+@media (min-width: 1200px) {
+    .grid-container {
+        grid-template-rows: repeat(4, 120px);
+        grid-template-columns: repeat(5, 120px);
+    }
+
+    .card-name {
+        font-size: 1.1rem;
+    }
 }
 
-.auth-form input::placeholder {
-    color: #bbb;
+@media (max-width: 768px) {
+    .game-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .battlefield {
+        height: auto;
+        grid-column: 1;
+    }
+
+    .side-panel {
+        order: 2;
+    }
 }
 
-.auth-form button {
-    margin-top: 10px;
+/* Анимации */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
 }
 
-.auth-links {
-    margin-top: 20px;
-    text-align: center;
+.pulse {
+    animation: pulse 2s infinite;
 }
 
-.auth-links a {
-    color: #7289da;
-    text-decoration: none;
-    font-weight: bold;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.auth-links a:hover {
-    text-decoration: underline;
-}
-
-.title {
-    text-align: center;
-    font-size: 3.5rem;
-    margin-bottom: 50px;
-    color: #43b581;
-}
-
-.menu-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    align-items: center;
-}
-
-.menu-button {
-    background: #7289da;
-    color: white;
-    padding: 15px 30px;
-    border-radius: 10px;
-    text-decoration: none;
-    font-size: 1.2rem;
-    width: 200px;
-    text-align: center;
-    transition: transform 0.2s, background 0.3s;
-}
-
-.menu-button:hover {
-    background: #5b6eae;
-    transform: scale(1.05);
+.fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
 }

@@ -10,11 +10,13 @@ deck = Deck('sqlite:///BD/BD.db')
 
 @app.route("/")
 def home():
-    return redirect(url_for("main_menu"))  # Перенаправляем на главное меню
+    return redirect(url_for("main_menu"))
+
 
 @app.route("/main_menu")
 def main_menu():
     return render_template("main_menu.html", username=session.get('username'))
+
 
 @app.route("/play")
 def play():
@@ -28,9 +30,11 @@ def play():
                            coins=deck.coins,
                            username=session.get('username'))
 
+
 @app.route("/settings")
 def settings():
     return "Настройки (в разработке)"  # Заглушка
+
 
 @app.route("/profile")
 def profile():
@@ -146,7 +150,7 @@ def player1_turn():
     if winner:
         return render_template("winner.html",
                                winner=winner)
-    return redirect(url_for("play_menu"))
+    return redirect(url_for("play"))
 
 
 @app.route("/player2_turn")

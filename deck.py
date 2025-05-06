@@ -39,7 +39,7 @@ class Deck:
 
         SqlAlchemyBase.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
-        self.grid: list[list[Optional[Card]]] = [[None for _ in range(5)] for _ in range(4)]
+        self.grid: list[list[Optional[Card]]] = [[None for _ in range(4)] for _ in range(4)]
         self.damage_balance = 0
         self.turn_stage = 0  # 0: p1 —> p2, 1: p2 -> p1
         self.coins = {1: 1, 2: 1}
@@ -120,6 +120,9 @@ class Deck:
         self.grid = [[None for _ in range(5)] for _ in range(4)]
         self.damage_balance = 0
         self.turn_stage = 0
+        self.coins = {1: 1, 2: 1}
+        self.income = {1: 1, 2: 1}
+        self.turn_count = {1: 0, 2: 0}
 
     def end_turn(self, player_id: int) -> None:
         self.turn_count[player_id] += 1
@@ -167,7 +170,7 @@ class Deck:
         pass
 
     def Udin_din_din_din_dun(self):
-        # получает -1 к урону есть есть союзники рядом
+        # получает -1 к урону есть союзники рядом
         pass
 
     def Dangerito_Bearito(self):

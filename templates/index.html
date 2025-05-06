@@ -10,7 +10,8 @@
 <body>
     <div class="game-container">
         <h1>⚔️ CARD BATTLE ⚔️</h1>
-        <a href="/friends">Мои друзья</a> | <a href="/logout">Выйти</a> | <a href="{{ url_for('main_menu') }}" class="control-button">Главное меню</a>
+        <a href="/friends" class="control-button">Мои друзья</a>
+        <a href="/main_menu" class="control-button">Главное меню</a>
         <h2 class="turn-indicator">Ход игрока {{ current_player }}</h2>
         <h3>Монеты игрока {{ current_player }}: {{ coins[current_player] }}</h3>
 

@@ -34,7 +34,7 @@ def play():
 
 @app.route("/settings")
 def settings():
-    return "Настройки (в разработке)"  # Заглушка
+    return "Настройки настраиваются"  # Заглушка
 
 
 @app.route("/profile")

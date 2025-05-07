@@ -153,6 +153,7 @@ class Deck:
     def Lirili_Larila(self):
         # ходить раз в 2 хода
         pass
+
     def Coccodrillo_Formaggioso(self):
         # когда его бьют враг хилится + каждый ход отдает по хп союзникам по бокам
         pass
@@ -186,7 +187,7 @@ class Deck:
         pass
 
     def Bobritto_Bandito(self):
-        # при атаке отбирает деньги
+        # раз в 2 хода отбирает деньги от 1 до кол-во монет за ход
         pass
 
     def Tralalelo_Tralala(self):

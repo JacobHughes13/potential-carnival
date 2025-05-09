@@ -10,7 +10,6 @@ app.secret_key = 'SUPER_SECRET_KEY'
 deck = Deck('sqlite:///BD/BD.db')
 
 
-
 @app.route("/")
 def home():
     return redirect(url_for("main_menu"))
@@ -62,17 +61,17 @@ def register():
         password = request.form["password"]
         hashed_password = generate_password_hash(password)
 
-        session_db = deck.Session()
-        existing_user = session_db.query(User).filter_by(username=username).first()
+        db_session = deck.Session()
+        existing_user = db_session.query(User).filter_by(username=username).first()
         if existing_user:
-            session_db.close()
+            db_session.close()
             flash("Пользователь с таким именем уже существует.")
             return redirect(url_for("register"))
 
         new_user = User(username=username, password=hashed_password)
-        session_db.add(new_user)
-        session_db.commit()
-        session_db.close()
+        db_session.add(new_user)
+        db_session.commit()
+        db_session.close()
 
         flash("Регистрация успешна! Теперь войдите в аккаунт.")
         return redirect(url_for("login"))
@@ -86,9 +85,9 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
 
-        session_db = deck.Session()
-        user = session_db.query(User).filter_by(username=username).first()
-        session_db.close()
+        db_session = deck.Session()
+        user = db_session.query(User).filter_by(username=username).first()
+        db_session.close()
 
         if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
@@ -106,25 +105,26 @@ def friends():
     if 'user_id' not in session:
         return redirect(url_for("login"))
 
-    session_db = deck.Session()
+    db_session = deck.Session()
     user_id = session['user_id']
 
     if request.method == "POST":
         friend_username = request.form["friend_username"]
-        friend = session_db.query(User).filter_by(username=friend_username).first()
+        friend = db_session.query(User).filter_by(username=friend_username).first()
         if friend and friend.id != user_id:
-            existing = session_db.query(Friend).filter_by(user_id=user_id, friend_id=friend.id).first()
+            existing = db_session.query(Friend).filter_by(user_id=user_id, friend_id=friend.id).first()
             if not existing:
                 new_friend = Friend(user_id=user_id, friend_id=friend.id)
-                session_db.add(new_friend)
-                session_db.commit()
+                db_session.add(new_friend)
+                db_session.commit()
 
-    friends_list = session_db.query(User.username).join(
+    friends_list = db_session.query(User.username).join(
         Friend, User.id == Friend.friend_id
     ).filter(Friend.user_id == user_id).all()
-    session_db.close()
+    db_session.close()
 
-    return render_template("friends.html", friends=friends_list)
+    return render_template("friends.html",
+                           friends=friends_list)
 
 
 @app.route("/logout")

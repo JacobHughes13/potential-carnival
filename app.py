@@ -1,9 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, session, request, flash
 from deck import *
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import func
-
-
 
 app = Flask(__name__)
 app.secret_key = 'SUPER_SECRET_KEY'
@@ -26,20 +23,18 @@ def play():
     if "user_id" not in session:
         return redirect(url_for('login'))
 
-    if 'available_cards' not in session or session.get('cards_player') != session.get('current_player', 1):
-        random_cards = deck.get_random_cards(3)
-        session['available_cards'] = [c.id for c in random_cards]
-        session['cards_player'] = session.get('current_player', 1)
-    else:
-        random_cards = [deck.get_card_by_id(cid) for cid in session['available_cards']]
-    
+    current_player = session.get('current_player', 1)
+    username = session.get('username')
+    card_ids = session.get(f'available_cards_p{current_player}', [])
+    cards = [deck.get_card_by_id(card_id) for card_id in card_ids]
+
     return render_template("index.html",
-                           cards=random_cards,
+                           cards=cards,
                            grid=deck.grid,
-                           current_player=session.get('current_player', 1),
+                           current_player=current_player,
                            damage_balance=deck.damage_balance,
                            coins=deck.coins,
-                           username=session.get('username'))
+                           username=username)
 
 
 @app.route("/settings")
@@ -133,36 +128,48 @@ def logout():
     session.pop('username', None)
     session.pop('current_player', None)
     session.pop('selected_card', None)
+    session.pop('available_cards_p1', None)
+    session.pop('available_cards_p2', None)
     return redirect(url_for("login"))
 
 
 @app.route("/pick_up_the_card/<int:card_id>")
-def pick_up_the_card(card_id):
+def pick_up_the_card(card_id: int):
     session['selected_card'] = card_id
     return redirect(url_for("play"))
 
 
 @app.route("/place_card/<int:row>/<int:col>")
-def place_card(row, col):
+def place_card(row: int, col: int):
     current_player = session.get('current_player', 1)
+    card_key = f'available_cards_p{current_player}'
+
     if 'selected_card' in session:
         success = deck.place_card(session['selected_card'], current_player, col)
         if success:
-            if 'available_cards' in session:
-                session['available_cards'] = [cid for cid in session['available_cards']
-                                            if cid != session['selected_card']]
+            if card_key in session:
+                session[card_key] = [cid for cid in session[card_key]
+                                     if cid != session['selected_card']]
             session.pop('selected_card', None)
-    if len(session['available_cards']) == 0:
-        session.pop('available_cards', None)
     return redirect(url_for("play"))
+
 
 
 @app.route("/player1_turn")
 def player1_turn():
     player_id = 1
-    winner = deck.battle_phase(player_id=player_id)
-    deck.move_cards(player_id=player_id)
-    deck.end_turn(player_id=player_id)
+    winner = deck.battle_phase(player_id)
+    deck.move_cards(player_id)
+    deck.end_turn(player_id)
+
+    key = f'available_cards_p{player_id}'
+    cards = session.get(key, [])
+    if len(cards) < 3:
+        new_card = deck.get_random_card()
+        if new_card:
+            cards.append(new_card.id)
+    session[key] = cards
+
     session['current_player'] = 2
     if winner:
         return render_template("winner.html",
@@ -173,13 +180,21 @@ def player1_turn():
 @app.route("/player2_turn")
 def player2_turn():
     player_id = 2
-    winner = deck.battle_phase(player_id=player_id)
-    deck.move_cards(player_id=player_id)
-    deck.end_turn(player_id=player_id)
+    winner = deck.battle_phase(player_id)
+    deck.move_cards(player_id)
+    deck.end_turn(player_id)
+
+    key = f'available_cards_p{player_id}'
+    cards = session.get(key, [])
+    if len(cards) < 3:
+        new_card = deck.get_random_card()
+        if new_card:
+            cards.append(new_card.id)
+    session[key] = cards
+
     session['current_player'] = 1
     if winner:
-        return render_template("winner.html",
-                               winner=winner)
+        return render_template("winner.html", winner=winner)
     return redirect(url_for("play"))
 
 
@@ -188,6 +203,10 @@ def reset():
     deck.reset()
     session['current_player'] = 1
     session.pop('selected_card', None)
+
+    session['available_cards_p1'] = [deck.get_random_card().id]
+    session['available_cards_p2'] = [deck.get_random_card().id]
+
     return redirect(url_for("play"))
 
 

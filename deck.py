@@ -2,7 +2,7 @@ from typing import Optional
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
-import random
+from random import choice
 
 SqlAlchemyBase = declarative_base()
 
@@ -115,8 +115,14 @@ class Deck:
                 if card and card.health <= 0:
                     self.grid[row][col] = None
 
+    def get_random_card(self) -> Optional[Card]:
+        session = self.Session()
+        cards = session.query(Card).all()
+        session.close()
+        return choice(cards) if cards else None
+
     def reset(self) -> None:
-        self.grid = [[None for _ in range(5)] for _ in range(4)]
+        self.grid = [[None for _ in range(5)] for _ in range(4)]  # возможно надо убрать
         self.damage_balance = 0
         self.turn_stage = 0
         self.coins = {1: 1, 2: 1}
@@ -129,18 +135,6 @@ class Deck:
             self.income[player_id] += 1
         self.coins[player_id] += self.income[player_id]
 
-    def get_random_cards(self, count=3):
-        session = self.Session()
-        try:
-            all_ids = [id_tuple[0] for id_tuple in session.query(Card.id).all()]
-            if not all_ids:
-                return []
-            random_ids = random.sample(all_ids, min(count, len(all_ids)))
-            return session.query(Card).filter(Card.id.in_(random_ids)).all()
-        finally:
-            session.close()
-
-        
     def Boneca_Ambamabu(self):
         # передвигается на соседнюю клетку
         pass

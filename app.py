@@ -76,6 +76,8 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    session.pop('available_cards_p1', None)
+    session.pop('available_cards_p2', None)
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
@@ -159,6 +161,10 @@ def place_card(row: int, col: int):
 def player1_turn():
     player_id = 1
     winner = deck.battle_phase(player_id)
+    if winner:
+        return render_template("winner.html",
+                               winner=winner)
+
     deck.move_cards(player_id)
     deck.end_turn(player_id)
 
@@ -171,9 +177,6 @@ def player1_turn():
     session[key] = cards
 
     session['current_player'] = 2
-    if winner:
-        return render_template("winner.html",
-                               winner=winner)
     return redirect(url_for("play"))
 
 
@@ -181,6 +184,10 @@ def player1_turn():
 def player2_turn():
     player_id = 2
     winner = deck.battle_phase(player_id)
+    if winner:
+        return render_template("winner.html",
+                               winner=winner)
+
     deck.move_cards(player_id)
     deck.end_turn(player_id)
 
@@ -193,8 +200,6 @@ def player2_turn():
     session[key] = cards
 
     session['current_player'] = 1
-    if winner:
-        return render_template("winner.html", winner=winner)
     return redirect(url_for("play"))
 
 

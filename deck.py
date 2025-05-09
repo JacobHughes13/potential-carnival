@@ -2,6 +2,7 @@ from typing import Optional
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
+import random
 
 SqlAlchemyBase = declarative_base()
 
@@ -46,13 +47,11 @@ class Deck:
         self.income = {1: 1, 2: 1}
         self.turn_count = {1: 0, 2: 0}
 
-    def get_card_by_id(self, card_id: int) -> Optional[Card] | None:
+    def get_card_by_id(self, card_id: int) -> Optional[Card]:
         session = self.Session()
-        db_card = session.query(Card).filter_by(id=card_id).first()
+        card = session.query(Card).filter(Card.id == card_id).first()
         session.close()
-        if db_card:
-            return db_card
-        return None
+        return card
 
     def place_card(self, card_id: int, player_id: int, col: int) -> bool:
         card = self.get_card_by_id(card_id)
@@ -129,6 +128,18 @@ class Deck:
         if self.turn_count[player_id] % 3 == 0:
             self.income[player_id] += 1
         self.coins[player_id] += self.income[player_id]
+
+    def get_random_cards(self, count=3):
+        session = self.Session()
+        try:
+            all_ids = [id_tuple[0] for id_tuple in session.query(Card.id).all()]
+            if not all_ids:
+                return []
+            random_ids = random.sample(all_ids, min(count, len(all_ids)))
+            return session.query(Card).filter(Card.id.in_(random_ids)).all()
+        finally:
+            session.close()
+
         
     def Boneca_Ambamabu(self):
         # передвигается на соседнюю клетку

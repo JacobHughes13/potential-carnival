@@ -468,3 +468,8 @@ body {
     font-size: 0.9rem;
     margin-bottom: 15px;
 }
+
+.card-preview.used {
+    opacity: 0.5;
+    pointer-events: none;
+}

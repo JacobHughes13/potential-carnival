@@ -1,6 +1,9 @@
 from flask import Flask, render_template, redirect, url_for, session, request, flash
 from deck import *
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import func
+
+
 
 app = Flask(__name__)
 app.secret_key = 'SUPER_SECRET_KEY'
@@ -24,7 +27,15 @@ def play():
     if "user_id" not in session:
         return redirect(url_for('login'))
 
+    if 'available_cards' not in session or session.get('cards_player') != session.get('current_player', 1):
+        random_cards = deck.get_random_cards(3)
+        session['available_cards'] = [c.id for c in random_cards]
+        session['cards_player'] = session.get('current_player', 1)
+    else:
+        random_cards = [deck.get_card_by_id(cid) for cid in session['available_cards']]
+    
     return render_template("index.html",
+                           cards=random_cards,
                            grid=deck.grid,
                            current_player=session.get('current_player', 1),
                            damage_balance=deck.damage_balance,
@@ -126,18 +137,23 @@ def logout():
 
 
 @app.route("/pick_up_the_card/<int:card_id>")
-def pick_up_the_card(card_id: int):
+def pick_up_the_card(card_id):
     session['selected_card'] = card_id
     return redirect(url_for("play"))
 
 
 @app.route("/place_card/<int:row>/<int:col>")
-def place_card(row: int, col: int):
+def place_card(row, col):
     current_player = session.get('current_player', 1)
     if 'selected_card' in session:
         success = deck.place_card(session['selected_card'], current_player, col)
         if success:
+            if 'available_cards' in session:
+                session['available_cards'] = [cid for cid in session['available_cards']
+                                            if cid != session['selected_card']]
             session.pop('selected_card', None)
+    if len(session['available_cards']) == 0:
+        session.pop('available_cards', None)
     return redirect(url_for("play"))
 
 

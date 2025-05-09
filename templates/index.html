@@ -36,13 +36,17 @@
                 <h3>Ваши карты:</h3>
                 <div class="card-selection">
                     {% if current_player == 1 %}
-                    <a href="/pick_up_the_card/0" class="card-preview">1</a>
-                    <a href="/pick_up_the_card/1" class="card-preview">2</a>
-                    <a href="/pick_up_the_card/2" class="card-preview">3</a>
-                    {% elif current_player == 2 %}
-                    <a href="/pick_up_the_card/2" class="card-preview">3</a>
-                    <a href="/pick_up_the_card/1" class="card-preview">2</a>
-                    <a href="/pick_up_the_card/0" class="card-preview">1</a>
+                        {% for card in cards %}
+                        <a href="/pick_up_the_card/{{ card.id }}" class="card-preview">
+                            {{ card.name }} (⚔️{{ card.attack }} ❤️{{ card.health }})
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        {% for card in cards %}
+                        <a href="/pick_up_the_card/{{ card.id }}" class="card-preview">
+                            {{ card.name }} (⚔️{{ card.attack }} ❤️{{ card.health }})
+                        </a>
+                        {% endfor %}
                     {% endif %}
                 </div>
             </div>

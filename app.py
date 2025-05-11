@@ -10,7 +10,7 @@ app.secret_key = 'SUPER_SECRET_KEY'
 deck = Deck('sqlite:///BD/BD.db')
 
 socketio = SocketIO(app)
-lobbies = {}  # Словарь: room_code -> [usernames]
+rooms = {}  # Словарь: room_code -> [usernames]
 
 
 def generate_lobby_code() -> str:
@@ -39,8 +39,9 @@ def create_lobby():
     if 'username' not in session:
         return redirect(url_for('login'))
     code = generate_lobby_code()
-    lobbies[code] = {'host': session['username'], 'guest': None}
-    return render_template('create_lobby.html', lobby_code=code)
+    rooms[code] = {'host': session['username'], 'guest': None}
+    return render_template('create_lobby.html',
+                           lobby_code=code)
 
 
 @app.route('/join_lobby', methods=['GET', 'POST'])
@@ -49,8 +50,8 @@ def join_lobby():
         return redirect(url_for('login'))
     if request.method == 'POST':
         code = request.form['lobby_code'].strip().upper()
-        if code in lobbies and lobbies[code]['guest'] is None:
-            lobbies[code]['guest'] = session['username']
+        if code in rooms and rooms[code]['guest'] is None:
+            rooms[code]['guest'] = session['username']
             return redirect(url_for('game', lobby_code=code))  # переход к игре
         else:
             return "Неверный код или лобби уже заполнено", 400
@@ -59,9 +60,9 @@ def join_lobby():
 
 @app.route('/cancel_lobby', methods=['POST'])
 def cancel_lobby():
-    for code, data in list(lobbies.items()):
+    for code, data in list(rooms.items()):
         if data['host'] == session.get('username'):
-            del lobbies[code]
+            del rooms[code]
     return redirect(url_for('choose_mode'))
 
 
@@ -75,11 +76,10 @@ def play_self():
     return redirect(url_for('play'))
 
 
-
 @socketio.on("create_room")
 def handle_create_room(data):
     username = session.get("username")
-    room_code = generate_room_code()
+    room_code = generate_lobby_code()
     rooms[room_code] = [username]
     join_room(room_code)
     emit("room_created", {"room": room_code, "users": rooms[room_code]}, room=room_code)

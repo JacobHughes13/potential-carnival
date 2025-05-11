@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Главное меню | Card Battle</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="game-container menu-container fade-in">
@@ -18,7 +20,7 @@
         </div>
 
         <div class="menu-cards">
-            <a href="{{ url_for('play') }}" class="menu-card">
+            <a href="{{ url_for('choose_mode') }}" class="menu-card">
                 <div class="menu-card-icon">🎮</div>
                 <h3 class="menu-card-title">Начать игру</h3>
                 <p class="menu-card-desc">Сразитесь с противником в эпической битве</p>

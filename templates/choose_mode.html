@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Выбор режима | Card Battle</title>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="game-container menu-container fade-in">
+        <div class="menu-header">
+            <h1 class="title pulse">Выберите режим игры</h1>
+        </div>
+
+        <div class="menu-cards">
+            <a href="{{ url_for('join_lobby') }}" class="menu-card">
+                <div class="menu-card-icon">➡️</div>
+                <h3 class="menu-card-title">Присоединиться</h3>
+                <p class="menu-card-desc">Введите код лобби и присоединитесь к игре</p>
+                <button class="control-button">Присоединиться</button>
+            </a>
+
+            <a href="{{ url_for('create_lobby') }}" class="menu-card">
+                <div class="menu-card-icon">➕</div>
+                <h3 class="menu-card-title">Создать лобби</h3>
+                <p class="menu-card-desc">Создайте комнату и ждите соперника</p>
+                <button class="control-button">Создать</button>
+            </a>
+
+            <a href="{{ url_for('play_self') }}" class="menu-card">
+                <div class="menu-card-icon">♻️</div>
+                <h3 class="menu-card-title">Играть самому</h3>
+                <p class="menu-card-desc">Играйте один против себя для тестов</p>
+                <button class="control-button">Играть</button>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

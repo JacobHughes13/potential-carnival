@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Лобби</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Привет, {{ username }}!</h1>
+
+    <button onclick="createRoom()">Создать комнату</button>
+    <br><br>
+    <input type="text"
+           id="roomCode"
+           placeholder="Введите код комнаты">
+    <button onclick="joinRoom()">Присоединиться</button>
+
+    <div id="lobbyStatus"></div>
+
+    <script>
+        const socket = io();
+
+        function createRoom() {
+            socket.emit("create_room", {});
+        }
+
+        function joinRoom() {
+            const code = document.getElementById("roomCode").value.toUpperCase();
+            socket.emit("join_room", { room: code });
+        }
+
+        socket.on("room_created", data => {
+            document.getElementById("lobbyStatus").innerText = "Комната создана: " + data.room;
+        });
+
+        socket.on("room_joined", data => {
+            document.getElementById("lobbyStatus").innerText = "Вы в комнате: " + data.room + "\nУчастники: " + data.users.join(", ");
+        });
+
+        socket.on("error", data => {
+            alert(data.message);
+        });
+    </script>
+</body>
+</html>

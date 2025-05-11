@@ -1,21 +1,114 @@
 from flask import Flask, render_template, redirect, url_for, session, request, flash
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from deck import *
 from werkzeug.security import generate_password_hash, check_password_hash
+from random import choices
+import string
 
 app = Flask(__name__)
 app.secret_key = 'SUPER_SECRET_KEY'
 deck = Deck('sqlite:///BD/BD.db')
 
+socketio = SocketIO(app)
+lobbies = {}  # Словарь: room_code -> [usernames]
+
+
+def generate_lobby_code() -> str:
+    return ''.join(choices(string.ascii_uppercase + string.digits, k=6))
+
+
+@app.route("/lobby", methods=["GET", "POST"])
+def lobby():
+    if 'username' not in session:
+        return redirect(url_for("login"))
+
+    username = session["username"]
+    return render_template("lobby.html",
+                           username=username)
+
+
+@app.route('/choose_mode')
+def choose_mode():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('choose_mode.html', username=session.get('username'))
+
+
+@app.route('/create_lobby')
+def create_lobby():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    code = generate_lobby_code()
+    lobbies[code] = {'host': session['username'], 'guest': None}
+    return render_template('create_lobby.html', lobby_code=code)
+
+
+@app.route('/join_lobby', methods=['GET', 'POST'])
+def join_lobby():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        code = request.form['lobby_code'].strip().upper()
+        if code in lobbies and lobbies[code]['guest'] is None:
+            lobbies[code]['guest'] = session['username']
+            return redirect(url_for('game', lobby_code=code))  # переход к игре
+        else:
+            return "Неверный код или лобби уже заполнено", 400
+    return render_template('join_lobby.html')
+
+
+@app.route('/cancel_lobby', methods=['POST'])
+def cancel_lobby():
+    for code, data in list(lobbies.items()):
+        if data['host'] == session.get('username'):
+            del lobbies[code]
+    return redirect(url_for('choose_mode'))
+
+
+@app.route('/game/<lobby_code>')
+def game(lobby_code: str):
+    return f"Игра началась в лобби {lobby_code}"
+
+
+@app.route('/play_self')
+def play_self():
+    return redirect(url_for('play'))
+
+
+
+@socketio.on("create_room")
+def handle_create_room(data):
+    username = session.get("username")
+    room_code = generate_room_code()
+    rooms[room_code] = [username]
+    join_room(room_code)
+    emit("room_created", {"room": room_code, "users": rooms[room_code]}, room=room_code)
+
+
+@socketio.on("join_room")
+def handle_join_room(data):
+    room_code = data["room"]
+    username = session.get("username")
+    if room_code in rooms:
+        if username not in rooms[room_code]:
+            rooms[room_code].append(username)
+        join_room(room_code)
+        emit("room_joined", {"room": room_code, "users": rooms[room_code]}, room=room_code)
+    else:
+        emit("error", {"message": "Комната не найдена."})
+
 
 @app.route("/")
+@app.route("/home")
 def home():
     return redirect(url_for("main_menu"))
 
 
 @app.route("/main_menu")
 def main_menu():
+    username = session.get('username')
     return render_template("main_menu.html",
-                           username=session.get('username'))
+                           username=username)
 
 
 @app.route("/play")
@@ -216,7 +309,7 @@ def reset():
 
 
 def main() -> None:
-    app.run(port=8080, host='127.0.0.1', debug=True)
+    socketio.run(app=app, port=8080, host='127.0.0.1', debug=True, allow_unsafe_werkzeug=True)
 
 
 if __name__ == '__main__':

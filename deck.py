@@ -135,20 +135,32 @@ class Deck:
             self.income[player_id] += 1
         self.coins[player_id] += self.income[player_id]
 
+    def Tralalelo_Tralala(self):
+        # шанс уклонения
+        pass
+
+    def Bobritto_Bandito(self):
+        # раз в 2 хода отбирает деньги от 1 до кол-во монет за ход
+        pass
+
+    def Tung_Tung_Tung_Sahur(self):
+        # 50 % застанить врага
+        pass
+
+    def Bombombini_Gusini(self):
+        # получает бафы если есть bombordilo crocodilo рядом
+        pass
+
     def Boneca_Ambamabu(self):
-        # передвигается на соседнюю клетку
+        # передвигается на соседнюю клетку и полусает + 1 к урону к рандомному союзнику
         pass
 
-    def Serbinyo_Carshippinyo(self):
-        # ХЗ
+    def Trippi_Troppi(self):
+        # каждые 3 хода копирует себя если есть место на поле, если нет места то хилит рандомного союзника на 2 хп
         pass
 
-    def Purri_Purrani_Nyankani(self):
-        # все обязаны атакават его
-        pass
-
-    def Babadubababadududubadududubadu(self):
-        # камикадзе
+    def La_Vaca_Saturno_Saturnita(self):
+        # раз в ход с маленькой вероятностью может взорваться и забрать карту перед собой
         pass
 
     def Talpa_Di_Ferro(self):
@@ -159,46 +171,38 @@ class Deck:
         # ходить раз в 2 хода
         pass
 
-    def Coccodrillo_Formaggioso(self):
-        # когда его бьют враг хилится + каждый ход отдает по хп союзникам по бокам
-        pass
-
-    def Baranito_Tankito(self):
-        # стреляет по ближайшему врагу, чем дальше враг тем меньше урона. Не способен стрелять по игроку пока есть враги
-        pass
-
     def Tus_tus_tus_tus_tus_Kaktus_tus_tus_kutus_kutus(self):
         # выбирает свой целью врага последним убившего союзника иначе Выбирает свой целью врага с наибольшим уроном
         pass
 
-    def Pot_hotspot(self):
-        # ворует 1 урон и 1 хп у каждого союзника рядом, не может убить союзника
+    def Cappuccino_Assassino(self):
+        # когда противник атакует его, он отходит в сторону сотавляя на своем месте капучино с 0 урона и 1 хп (1 раз за жизнь)
         pass
 
     def Udin_din_din_din_dun(self):
         # получает -1 к урону есть союзники рядом
         pass
 
-    def Dangerito_Bearito(self):
-        # забирает 1 урон и 1 хп у соседних врагов
-        pass
-
-    def Bombombini_Gusini(self):
-        # получает бафы если есть bombordilo crocodilo рядом
-        pass
-
-    def Tung_Tung_Tung_Sahur(self):
-        # 50 % застанить врага
-        pass
-
-    def Bobritto_Bandito(self):
-        # раз в 2 хода отбирает деньги от 1 до кол-во монет за ход
-        pass
-
-    def Tralalelo_Tralala(self):
-        # шанс уклонения
-        pass
-
     def Bombardino_Crocodillo(self):
         # бьёт всех врагов стразу
+        pass
+
+    def Frigo_camelo(self):
+        # двойное попадание по врагу замораживает его на ход
+        pass
+
+    def Brr_Brr_Patapim(self):
+        # при убийстве врага - 1 к урону
+        pass
+
+    def Trulimero_Trulicina(self):
+        # каждый ход получает 1 урон
+        pass
+
+    def Chimpazini_Bananini(self):
+        # при получении крона увеличивает свой на 2 ед
+        pass
+
+    def Balerinna_Cappucinna(self):
+        # если враг ее убивает то враг получает -2 к урону
         pass

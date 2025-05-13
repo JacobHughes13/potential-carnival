@@ -6,22 +6,67 @@
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .card-preview {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .card-preview:hover {
+            background-color: #f5f5f5;
+        }
+        .card-preview.selected {
+            border: 2px solid gold;
+            background-color: #fffacd;
+        }
+        .grid-cell {
+            position: relative;
+            min-height: 120px;
+            border: 1px solid #eee;
+        }
+        .empty-slot {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            cursor: pointer;
+        }
+        .slot-content {
+            font-size: 2rem;
+            color: #eee;
+        }
+        #connection-status {
+            padding: 5px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .disconnected {
+            background-color: #f44336;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <div class="game-container game-layout">
-        <!-- Левая панель -->
         <div class="side-panel">
             <h1 class="game-title">⚔️ CARD BATTLE ⚔️</h1>
             <p class="lobby-code">Лобби: {{ lobby_code }}</p>
 
             <div class="player-info">
-                <h2>Игрок: {{ username }}</h2>
-                <h3>Противник: {{ opponent }}</h3>
-                <p id="current-player-info">Ожидание хода...</p>
-                <p id="coins-info"><strong>Монеты:</strong> <span id="coins-amount">0</span> 💰</p>
-                <div class="balance-indicator">
-                    <p><strong>Баланс:</strong> <span id="balance-amount">0</span></p>
+                <h2 id="player-id">Игрок: {{ username }}</h2>
+                <h3 id="opponent-name">Противник: {{ opponent }}</h3>
+                <div id="connection-status" class="connected">
+                    ● Соединение установлено
                 </div>
+                <p id="current-player-info">Ожидание хода...</p>
+                <p><strong>Монеты:</strong> <span id="coins-amount">{{ game_state.coins }}</span> 💰</p>
+                <p><strong>Баланс:</strong> <span id="balance-amount">{{ game_state.damage_balance }}</span></p>
             </div>
 
             <div class="controls">
@@ -33,15 +78,36 @@
             <div class="player-area">
                 <h3>Ваши карты:</h3>
                 <div id="available-cards" class="card-selection">
-                    <!-- Карты будут добавляться через JavaScript -->
+                    {% for card_id in game_state.available_cards %}
+                    <div class="card-preview" data-card-id="{{ card_id }}">
+                        Карта #{{ card_id }}
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
 
-        <!-- Игровое поле -->
         <div class="battlefield">
             <div class="grid-container" id="game-grid">
-                <!-- Игровое поле будет заполняться через JavaScript -->
+                {% for row in range(4) %}
+                    {% for col in range(5) %}
+                    <div class="grid-cell" data-row="{{ row }}" data-col="{{ col }}">
+                        {% if game_state.grid[row][col] %}
+                        <div class="card player{{ 1 if row < 2 else 2 }}">
+                            <div class="card-name">{{ game_state.grid[row][col].name }}</div>
+                            <div class="card-stats">
+                                <span>⚔️{{ game_state.grid[row][col].attack }}</span>
+                                <span>❤️{{ game_state.grid[row][col].health }}</span>
+                            </div>
+                        </div>
+                        {% elif (player_id == 1 and row == 0) or (player_id == 2 and row == 3) %}
+                        <div class="empty-slot">
+                            <div class="slot-content">+</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -52,68 +118,157 @@
         const username = "{{ username }}";
         const playerId = {{ player_id }};
         let selectedCardId = null;
-        let gameState = {};
+        let currentPlayer = null;
 
-        // Подключение к комнате
-        socket.emit('join_room', { room: lobbyCode });
-
-        // Подписка на комнату игрока
-        const playerRoom = `${lobbyCode}_${playerId === 1 ? 'host' : 'guest'}`;
-        socket.emit('subscribe', { room: playerRoom });
-
-        // Обработка обновления состояния игры
-        socket.on('game_update', (data) => {
-            gameState = data.game_state;
-            updateUI();
-
-            // Активируем кнопку завершения хода, если сейчас наш ход
-            const isMyTurn = data.current_player === playerId;
-            document.getElementById('end-turn-btn').disabled = !isMyTurn;
-
-            document.getElementById('current-player-info').textContent =
-                isMyTurn ? 'Ваш ход!' : 'Ход противника...';
+        // Initialize game
+        document.addEventListener('DOMContentLoaded', () => {
+            setupSocketEvents();
+            setupEventListeners();
+            updateUI({{ game_state|tojson }});
         });
 
-        // Обработка окончания игры
-        socket.on('game_over', (data) => {
-            const winnerText = data.winner === playerId ? 'Вы победили!' : 'Вы проиграли!';
-            alert(winnerText);
-            window.location.href = '/main_menu';
-        });
+        function setupSocketEvents() {
+            socket.on('connect', () => {
+                console.log('Connected to server');
+                document.getElementById('connection-status').className = 'connected';
+                document.getElementById('connection-status').textContent = '● Соединение установлено';
 
-        // Обработка отключения противника
-        socket.on('player_left', (data) => {
-            alert(`Игрок ${data.username} покинул игру. Вы победили!`);
-            window.location.href = '/main_menu';
-        });
+                socket.emit('join_game', {
+                    lobby_code: lobbyCode,
+                    username: username,
+                    player_id: playerId
+                });
+            });
 
-        // Ошибки
-        socket.on('error', (data) => {
-            alert(data.message);
-        });
+            socket.on('disconnect', () => {
+                document.getElementById('connection-status').className = 'disconnected';
+                document.getElementById('connection-status').textContent = '● Соединение потеряно';
+            });
 
-        // Обновление интерфейса
-        function updateUI() {
-            // Обновляем информацию о монетах и балансе
+            socket.on('game_update', (data) => {
+                console.log('Game update received', data);
+                currentPlayer = data.current_player;
+                updateUI(data.game_state);
+
+                document.getElementById('end-turn-btn').disabled = currentPlayer !== playerId;
+                document.getElementById('current-player-info').textContent =
+                    currentPlayer === playerId ? 'Ваш ход!' : 'Ход противника...';
+            });
+
+            socket.on('game_over', (data) => {
+                if (data.winner === playerId) {
+                    alert('Поздравляем! Вы победили!');
+                } else {
+                    alert('К сожалению, вы проиграли.');
+                }
+                window.location.href = '/main_menu';
+            });
+
+            socket.on('player_left', (data) => {
+                alert(`Игрок ${data.username} покинул игру. Вы победили!`);
+                window.location.href = '/main_menu';
+            });
+
+            socket.on('error', (data) => {
+                alert(`Ошибка: ${data.message}`);
+            });
+        }
+
+        function setupEventListeners() {
+            // Card selection
+            document.querySelectorAll('.card-preview').forEach(card => {
+                card.addEventListener('click', () => {
+                    selectedCardId = card.dataset.cardId;
+                    document.querySelectorAll('.card-preview').forEach(c => {
+                        c.classList.toggle('selected', c.dataset.cardId === selectedCardId);
+                    });
+                });
+            });
+
+            // Empty slots for placing cards
+            document.querySelectorAll('.empty-slot').forEach(slot => {
+                slot.addEventListener('click', () => {
+                    if (!selectedCardId) {
+                        alert('Выберите карту сначала');
+                        return;
+                    }
+
+                    const cell = slot.closest('.grid-cell');
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+
+                    socket.emit('game_action', {
+                        action: 'place_card',
+                        room: lobbyCode,
+                        card_id: parseInt(selectedCardId),
+                        row: row,
+                        col: col,
+                        player_id: playerId
+                    });
+
+                    selectedCardId = null;
+                });
+            });
+
+            // End turn button
+            document.getElementById('end-turn-btn').addEventListener('click', () => {
+                if (confirm('Завершить ход?')) {
+                    socket.emit('game_action', {
+                        action: 'end_turn',
+                        room: lobbyCode,
+                        player_id: playerId
+                    });
+                }
+            });
+
+            // Surrender button
+            document.getElementById('surrender-btn').addEventListener('click', () => {
+                if (confirm('Вы уверены, что хотите сдаться?')) {
+                    socket.emit('game_action', {
+                        action: 'surrender',
+                        room: lobbyCode,
+                        player_id: playerId
+                    });
+                }
+            });
+        }
+
+        function updateUI(gameState) {
+            if (!gameState) return;
+
+            // Update coins and balance
             document.getElementById('coins-amount').textContent = gameState.coins || 0;
             document.getElementById('balance-amount').textContent = gameState.damage_balance || 0;
 
-            // Обновляем доступные карты
+            // Update available cards
             const cardsContainer = document.getElementById('available-cards');
             cardsContainer.innerHTML = '';
 
-            if (gameState.available_cards) {
+            if (gameState.available_cards && gameState.available_cards.length) {
                 gameState.available_cards.forEach(cardId => {
-                    // Здесь должен быть запрос к серверу для получения информации о карте
                     const cardElement = document.createElement('div');
                     cardElement.className = 'card-preview';
                     cardElement.textContent = `Карта #${cardId}`;
-                    cardElement.onclick = () => selectCard(cardId);
+                    cardElement.dataset.cardId = cardId;
+
+                    if (selectedCardId === cardId) {
+                        cardElement.classList.add('selected');
+                    }
+
+                    cardElement.addEventListener('click', () => {
+                        selectedCardId = cardId;
+                        document.querySelectorAll('.card-preview').forEach(el => {
+                            el.classList.toggle('selected', el.dataset.cardId === selectedCardId);
+                        });
+                    });
+
                     cardsContainer.appendChild(cardElement);
                 });
+            } else {
+                cardsContainer.innerHTML = '<p>Нет доступных карт</p>';
             }
 
-            // Обновляем игровое поле
+            // Update game grid
             const gridContainer = document.getElementById('game-grid');
             gridContainer.innerHTML = '';
 
@@ -122,6 +277,8 @@
                     for (let col = 0; col < 5; col++) {
                         const cell = document.createElement('div');
                         cell.className = 'grid-cell';
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
 
                         const card = gameState.grid[row][col];
                         if (card) {
@@ -130,30 +287,61 @@
 
                             const nameElement = document.createElement('div');
                             nameElement.className = 'card-name';
-                            nameElement.textContent = card.name;
+                            nameElement.textContent = card.name || '?';
 
                             const statsElement = document.createElement('div');
                             statsElement.className = 'card-stats';
                             statsElement.innerHTML = `
-                                <span>⚔️${card.attack}</span>
-                                <span>❤️${card.health}</span>
+                                <span>⚔️${card.attack || '?'}</span>
+                                <span>❤️${card.health || '?'}</span>
                             `;
 
                             cardElement.appendChild(nameElement);
                             cardElement.appendChild(statsElement);
-                            cell.appendChild(cardElement);
 
-                            // Добавляем обработчики для атаки/размещения карт
+                            // Make attackable cards clickable
                             if ((playerId === 1 && row === 1) || (playerId === 2 && row === 2)) {
                                 if (card.ready_to_attack) {
-                                    cardElement.onclick = () => attackWithCard(row, col);
+                                    cardElement.style.cursor = 'pointer';
+                                    cardElement.addEventListener('click', () => {
+                                        if (confirm(`Атаковать картой ${card.name}?`)) {
+                                            const targetRow = playerId === 1 ? 2 : 1;
+                                            socket.emit('game_action', {
+                                                action: 'attack',
+                                                room: lobbyCode,
+                                                player_id: playerId,
+                                                attacker_row: row,
+                                                attacker_col: col,
+                                                defender_row: targetRow,
+                                                defender_col: col
+                                            });
+                                        }
+                                    });
                                 }
                             }
+
+                            cell.appendChild(cardElement);
                         } else if ((playerId === 1 && row === 0) || (playerId === 2 && row === 3)) {
-                            // Пустые слоты для размещения карт
+                            // Empty slots for current player
                             const slot = document.createElement('div');
                             slot.className = 'empty-slot';
-                            slot.onclick = () => placeCard(row, col);
+                            slot.addEventListener('click', () => {
+                                if (selectedCardId) {
+                                    if (confirm(`Разместить карту #${selectedCardId} здесь?`)) {
+                                        socket.emit('game_action', {
+                                            action: 'place_card',
+                                            room: lobbyCode,
+                                            player_id: playerId,
+                                            card_id: parseInt(selectedCardId),
+                                            row: row,
+                                            col: col
+                                        });
+                                        selectedCardId = null;
+                                    }
+                                } else {
+                                    alert('Выберите карту сначала');
+                                }
+                            });
                             slot.innerHTML = '<div class="slot-content">+</div>';
                             cell.appendChild(slot);
                         }
@@ -164,69 +352,15 @@
             }
         }
 
-        // Выбор карты
-        function selectCard(cardId) {
-            selectedCardId = cardId;
-            // Подсветка выбранной карты
-            document.querySelectorAll('.card-preview').forEach(el => {
-                el.style.border = el.textContent.includes(cardId) ? '2px solid gold' : 'none';
-            });
-        }
+        // Ping server every 5 seconds
+        setInterval(() => {
+            socket.emit('ping', { lobby_code: lobbyCode });
+        }, 5000);
 
-        // Размещение карты на поле
-        function placeCard(row, col) {
-            if (!selectedCardId) {
-                alert('Выберите карту сначала');
-                return;
-            }
-
-            socket.emit('game_action', {
-                room: lobbyCode,
-                type: 'place_card',
-                card_id: selectedCardId,
-                row: row,
-                col: col
-            });
-
-            selectedCardId = null;
-        }
-
-        // Атака картой
-        function attackWithCard(attackerRow, attackerCol) {
-            // Здесь должна быть логика выбора цели для атаки
-            // Это упрощенная версия - атакуем напротив
-            const defenderRow = attackerRow === 1 ? 2 : 1;
-
-            socket.emit('game_action', {
-                room: lobbyCode,
-                type: 'attack',
-                attacker_row: attackerRow,
-                attacker_col: attackerCol,
-                defender_row: defenderRow,
-                defender_col: attackerCol
-            });
-        }
-
-        // Завершение хода
-        document.getElementById('end-turn-btn').onclick = () => {
-            socket.emit('game_action', {
-                room: lobbyCode,
-                type: 'end_turn'
-            });
-        };
-
-        // Сдача
-        document.getElementById('surrender-btn').onclick = () => {
-            if (confirm('Вы уверены, что хотите сдаться?')) {
-                socket.emit('game_action', {
-                    room: lobbyCode,
-                    type: 'surrender'
-                });
-            }
-        };
-
-        // Инициализация UI
-        updateUI();
+        socket.on('pong', () => {
+            document.getElementById('connection-status').className = 'connected';
+            document.getElementById('connection-status').textContent = '● Соединение установлено';
+        });
     </script>
 </body>
 </html>

@@ -473,3 +473,20 @@ body {
     opacity: 0.5;
     pointer-events: none;
 }
+
+.connection-status {
+    padding: 5px;
+    border-radius: 5px;
+    margin: 5px 0;
+    font-size: 0.9em;
+}
+
+.connection-status.connected {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.connection-status.disconnected {
+    background-color: #f44336;
+    color: white;
+}

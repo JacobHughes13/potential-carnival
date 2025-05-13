@@ -18,10 +18,17 @@
 
     <script>
         const socket = io();
-
         function createRoom() {
-            socket.emit("create_room", {});
+            console.log("Попытка создания комнаты...");
+            socket.emit("create_room", {}, (response) => {
+                if (response.error) {
+                    alert(response.error);
+                } else {
+                    window.location.href = `/game/${response.room}`;
+                }
+            });
         }
+
 
         function joinRoom() {
             const code = document.getElementById("roomCode").value.toUpperCase();

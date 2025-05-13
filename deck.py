@@ -1,4 +1,3 @@
-from typing import Optional
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -9,7 +8,6 @@ SqlAlchemyBase = declarative_base()
 
 class User(SqlAlchemyBase):
     __tablename__ = 'users'
-
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
@@ -17,7 +15,6 @@ class User(SqlAlchemyBase):
 
 class Friend(SqlAlchemyBase):
     __tablename__ = 'friends'
-
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     friend_id = Column(Integer, ForeignKey('users.id'), nullable=False)
@@ -25,68 +22,49 @@ class Friend(SqlAlchemyBase):
 
 class Card(SqlAlchemyBase):
     __tablename__ = 'cards'
-
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     attack = Column(Integer, nullable=False)
     health = Column(Integer, nullable=False)
     cost = Column(Integer, nullable=False)
-    ready_to_attack: bool = False
 
 
 class Deck:
-    def __init__(self, db_path: str = 'sqlite:///BD/BD.db') -> None:
-        self.engine = create_engine(db_path, echo=False)
+    def __init__(self, db_path='sqlite:///BD/BD.db'):
+        self.engine = create_engine(db_path)
         SqlAlchemyBase.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
-        self.grid = [[None for _ in range(5)] for _ in range(4)]
-        self.damage_balance = 0
-        self.turn_stage = 0  # 0: p1 → p2, 1: p2 → p1
-        self.coins = {1: 1, 2: 1}
-        self.income = {1: 1, 2: 1}
-        self.turn_count = {1: 0, 2: 0}
-        self.available_cards_p1 = []
-        self.available_cards_p2 = []
         self.reset()
 
-    def get_card_by_id(self, card_id: int) -> Optional[Card]:
-        session = self.Session()
-        card = session.query(Card).filter(Card.id == card_id).first()
-        session.close()
-        return card
-
-    def reset(self) -> None:
-        """Сброс состояния игры"""
+    def reset(self):
         self.grid = [[None for _ in range(5)] for _ in range(4)]
         self.damage_balance = 0
-        self.turn_stage = 0  # 0: p1 → p2, 1: p2 → p1
+        self.turn_stage = 0
         self.coins = {1: 1, 2: 1}
         self.income = {1: 1, 2: 1}
         self.turn_count = {1: 0, 2: 0}
         self.available_cards_p1 = []
         self.available_cards_p2 = []
 
-        # Добавляем начальные карты
+        # Add initial cards
         for _ in range(3):
             card = self.get_random_card()
             if card:
                 self.available_cards_p1.append(card.id)
                 card = self.get_random_card()
-                self.available_cards_p2.append(card.id)
+                if card:
+                    self.available_cards_p2.append(card.id)
 
-    def get_game_state(self, player_id: int) -> dict:
-        """Возвращает состояние игры для конкретного игрока"""
+    def get_game_state(self, player_id):
         opponent_id = 2 if player_id == 1 else 1
-
-        # Маскируем карты противника, если они не в бою
         visible_grid = []
+
         for row_idx, row in enumerate(self.grid):
             visible_row = []
             for col_idx, card in enumerate(row):
                 if card is None:
                     visible_row.append(None)
                 else:
-                    # Карты в задних рядах противника не видны
                     if ((player_id == 1 and row_idx >= 2) or
                             (player_id == 2 and row_idx <= 1)):
                         visible_row.append({'name': '?', 'attack': '?', 'health': '?'})
@@ -95,7 +73,7 @@ class Deck:
                             'name': card.name,
                             'attack': card.attack,
                             'health': card.health,
-                            'ready_to_attack': card.ready_to_attack
+                            'ready_to_attack': getattr(card, 'ready_to_attack', False)
                         })
             visible_grid.append(visible_row)
 
@@ -109,9 +87,15 @@ class Deck:
             'turn_count': self.turn_count[player_id]
         }
 
-    def place_card(self, card_id: int, player_id: int, col: int) -> bool:
+    def get_random_card(self):
+        session = self.Session()
+        cards = session.query(Card).all()
+        session.close()
+        return choice(cards) if cards else None
+
+    def place_card(self, card_id, player_id, col):
         card = self.get_card_by_id(card_id)
-        if card is None or card.cost > self.coins[player_id]:
+        if not card or card.cost > self.coins[player_id]:
             return False
 
         row = 0 if player_id == 1 else 3
@@ -123,21 +107,27 @@ class Deck:
         self.grid[row][col] = card
         return True
 
-    def move_cards(self, player_id: int) -> None:
+    def get_card_by_id(self, card_id):
+        session = self.Session()
+        card = session.query(Card).filter_by(id=card_id).first()
+        session.close()
+        return card
+
+    def move_cards(self, player_id):
         if player_id == 1:
             for col in range(5):
                 if self.grid[1][col] is None and self.grid[0][col]:
                     self.grid[1][col] = self.grid[0][col]
                     self.grid[0][col] = None
                     self.grid[1][col].ready_to_attack = True
-        elif player_id == 2:
+        else:
             for col in range(5):
                 if self.grid[2][col] is None and self.grid[3][col]:
                     self.grid[2][col] = self.grid[3][col]
                     self.grid[3][col] = None
                     self.grid[2][col].ready_to_attack = True
 
-    def battle_phase(self, player_id: int) -> Optional[int] | None:
+    def battle_phase(self, player_id):
         for col in range(5):
             if player_id == 1:
                 attacker = self.grid[1][col]
@@ -164,28 +154,14 @@ class Deck:
             return 2
         return None
 
-    def remove_dead_cards(self) -> None:
+    def remove_dead_cards(self):
         for row in range(4):
             for col in range(5):
                 card = self.grid[row][col]
                 if card and card.health <= 0:
                     self.grid[row][col] = None
 
-    def get_random_card(self) -> Optional[Card]:
-        session = self.Session()
-        cards = session.query(Card).all()
-        session.close()
-        return choice(cards) if cards else None
-
-    def reset(self) -> None:
-        self.grid = [[None for _ in range(5)] for _ in range(4)]  # возможно надо убрать
-        self.damage_balance = 0
-        self.turn_stage = 0
-        self.coins = {1: 1, 2: 1}
-        self.income = {1: 1, 2: 1}
-        self.turn_count = {1: 0, 2: 0}
-
-    def end_turn(self, player_id: int) -> None:
+    def end_turn(self, player_id):
         self.turn_count[player_id] += 1
         if self.turn_count[player_id] % 3 == 0:
             self.income[player_id] += 1

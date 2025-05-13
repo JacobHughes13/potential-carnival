@@ -37,21 +37,77 @@ class Card(SqlAlchemyBase):
 class Deck:
     def __init__(self, db_path: str = 'sqlite:///BD/BD.db') -> None:
         self.engine = create_engine(db_path, echo=False)
-
         SqlAlchemyBase.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
-        self.grid: list[list[Optional[Card]]] = [[None for _ in range(5)] for _ in range(4)]
+        self.grid = [[None for _ in range(5)] for _ in range(4)]
         self.damage_balance = 0
-        self.turn_stage = 0  # 0: p1 —> p2, 1: p2 -> p1
+        self.turn_stage = 0  # 0: p1 → p2, 1: p2 → p1
         self.coins = {1: 1, 2: 1}
         self.income = {1: 1, 2: 1}
         self.turn_count = {1: 0, 2: 0}
+        self.available_cards_p1 = []
+        self.available_cards_p2 = []
+        self.reset()
 
     def get_card_by_id(self, card_id: int) -> Optional[Card]:
         session = self.Session()
         card = session.query(Card).filter(Card.id == card_id).first()
         session.close()
         return card
+
+    def reset(self) -> None:
+        """Сброс состояния игры"""
+        self.grid = [[None for _ in range(5)] for _ in range(4)]
+        self.damage_balance = 0
+        self.turn_stage = 0  # 0: p1 → p2, 1: p2 → p1
+        self.coins = {1: 1, 2: 1}
+        self.income = {1: 1, 2: 1}
+        self.turn_count = {1: 0, 2: 0}
+        self.available_cards_p1 = []
+        self.available_cards_p2 = []
+
+        # Добавляем начальные карты
+        for _ in range(3):
+            card = self.get_random_card()
+            if card:
+                self.available_cards_p1.append(card.id)
+                card = self.get_random_card()
+                self.available_cards_p2.append(card.id)
+
+    def get_game_state(self, player_id: int) -> dict:
+        """Возвращает состояние игры для конкретного игрока"""
+        opponent_id = 2 if player_id == 1 else 1
+
+        # Маскируем карты противника, если они не в бою
+        visible_grid = []
+        for row_idx, row in enumerate(self.grid):
+            visible_row = []
+            for col_idx, card in enumerate(row):
+                if card is None:
+                    visible_row.append(None)
+                else:
+                    # Карты в задних рядах противника не видны
+                    if ((player_id == 1 and row_idx >= 2) or
+                            (player_id == 2 and row_idx <= 1)):
+                        visible_row.append({'name': '?', 'attack': '?', 'health': '?'})
+                    else:
+                        visible_row.append({
+                            'name': card.name,
+                            'attack': card.attack,
+                            'health': card.health,
+                            'ready_to_attack': card.ready_to_attack
+                        })
+            visible_grid.append(visible_row)
+
+        return {
+            'grid': visible_grid,
+            'damage_balance': self.damage_balance,
+            'coins': self.coins[player_id],
+            'income': self.income[player_id],
+            'available_cards': getattr(self, f'available_cards_p{player_id}', []),
+            'opponent_coins': self.coins[opponent_id],
+            'turn_count': self.turn_count[player_id]
+        }
 
     def place_card(self, card_id: int, player_id: int, col: int) -> bool:
         card = self.get_card_by_id(card_id)

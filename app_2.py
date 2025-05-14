@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, session, request, flash, Request
+from flask import Flask, render_template, redirect, url_for, session, request, flash, Response
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.security import generate_password_hash, check_password_hash
 from random import choices, randint
@@ -45,7 +45,7 @@ def update_game_state(room_code: str) -> None:
         emit('game_over',
              {'winner': 1},
              room=room_code)
-    
+
     elif deck_.damage_balance <= -10:
         emit('game_over',
              {'winner': 2},
@@ -53,12 +53,12 @@ def update_game_state(room_code: str) -> None:
 
 
 @app.route('/')
-def home() -> Request:
+def home() -> Response:
     return redirect(url_for('main_menu'))
 
 
 @app.route("/settings")
-def settings() -> Request | str:
+def settings() -> Response | str:
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -66,7 +66,7 @@ def settings() -> Request | str:
 
 
 @app.route('/login', methods=['GET', 'POST'])
-def login() -> Request | str:
+def login() -> Response | str:
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -81,7 +81,7 @@ def login() -> Request | str:
 
 
 @app.route('/register', methods=['GET', 'POST'])
-def register() -> Request | str:
+def register() -> Response | str:
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -99,7 +99,7 @@ def register() -> Request | str:
 
 
 @app.route("/logout")
-def logout() -> Request:
+def logout() -> Response:
     session.pop('user_id', None)
     session.pop('username', None)
     session.pop('current_player', None)
@@ -110,7 +110,7 @@ def logout() -> Request:
 
 
 @app.route('/main_menu')
-def main_menu() -> Request | str:
+def main_menu() -> Response | str:
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -120,7 +120,7 @@ def main_menu() -> Request | str:
 
 
 @app.route('/choose_mode')
-def choose_mode() -> Request | str:
+def choose_mode() -> Response | str:
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -130,7 +130,7 @@ def choose_mode() -> Request | str:
 
 
 @app.route("/profile")
-def profile() -> Request | str:
+def profile() -> Response | str:
     if "username" not in session:
         return redirect(url_for("login"))
 
@@ -139,7 +139,7 @@ def profile() -> Request | str:
 
 
 @app.route("/friends", methods=["GET", "POST"])
-def friends() -> Request | str:
+def friends() -> Response | str:
     if 'user_id' not in session:
         return redirect(url_for("login"))
 
@@ -166,12 +166,12 @@ def friends() -> Request | str:
 
 
 @app.route('/play_self')
-def play_self() -> Request:
+def play_self() -> Response:
     return redirect(url_for('play'))
 
 
 @app.route("/play")
-def play() -> Request | str:
+def play() -> Response | str:
     if "user_id" not in session:
         return redirect(url_for('login'))
 
@@ -190,7 +190,7 @@ def play() -> Request | str:
 
 
 @app.route('/lobby')
-def lobby() -> Request | str:
+def lobby() -> Response | str:
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -200,7 +200,7 @@ def lobby() -> Request | str:
 
 
 @app.route('/create_lobby')
-def create_lobby() -> Request | str:
+def create_lobby() -> Response | str:
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -217,7 +217,7 @@ def create_lobby() -> Request | str:
 
 
 @app.route('/cancel_lobby', methods=['POST'])
-def cancel_lobby() -> Request:
+def cancel_lobby() -> Response:
     for code, data in list(rooms.items()):
         if data['host'] == session.get('username'):
             del rooms[code]
@@ -225,7 +225,7 @@ def cancel_lobby() -> Request:
 
 
 @app.route('/join_lobby', methods=['GET', 'POST'])
-def join_lobby() -> Request | str:
+def join_lobby() -> Response | str:
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -239,7 +239,7 @@ def join_lobby() -> Request | str:
 
 
 @app.route('/game/<lobby_code>')
-def game(lobby_code: str) -> Request | str:
+def game(lobby_code: str) -> Response | str:
     if 'username' not in session:
         return redirect(url_for('login'))
 
@@ -412,7 +412,8 @@ def handle_game_action(data) -> None:
             if winner:
                 room['state'] = GameStates.FINISHED
                 emit('game_over',
-                     {'winner': winner}, room=room_code)
+                     {'winner': winner},
+                     room=room_code)
                 return
 
             deck.move_cards(player_id)
@@ -449,10 +450,11 @@ def handle_get_game_state(data) -> None:
     else:
         return
 
-    emit('game_state_response', {
-        'game_state'    : room['deck'].get_game_state(player_id),
-        'current_player': room['deck'].turn_stage + 1
-    })
+    emit('game_state_response',
+         {
+             'game_state'    : room['deck'].get_game_state(player_id),
+             'current_player': room['deck'].turn_stage + 1
+         })
 
 
 @socketio.on('leave_room')

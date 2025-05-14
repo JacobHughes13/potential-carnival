@@ -213,7 +213,8 @@ def create_lobby() -> Response | str:
         'last_action': datetime.now()
     }
     user_rooms[session['username']] = code
-    return render_template('create_lobby.html', lobby_code=code)
+    return render_template('create_lobby.html',
+                           lobby_code=code)
 
 
 @app.route('/cancel_lobby', methods=['POST'])
@@ -232,7 +233,9 @@ def join_lobby() -> Response | str:
     if request.method == 'POST':
         code = request.form['lobby_code'].upper()
         if code in rooms and rooms[code]['guest'] is None:
-            return redirect(url_for('game', lobby_code=code))
+            return redirect(url_for('game',
+                                    lobby_code=code))
+
         flash('Неправильный код комнаты или она заполнена')
 
     return render_template('join_lobby.html')

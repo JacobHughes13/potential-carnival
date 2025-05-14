@@ -42,9 +42,14 @@ def update_game_state(room_code: str) -> None:
              room=f"{room_code}_player{pid}")
 
     if deck_.damage_balance >= 10:
-        emit('game_over', {'winner': 1}, room=room_code)
+        emit('game_over',
+             {'winner': 1},
+             room=room_code)
+    
     elif deck_.damage_balance <= -10:
-        emit('game_over', {'winner': 2}, room=room_code)
+        emit('game_over',
+             {'winner': 2},
+             room=room_code)
 
 
 @app.route('/')

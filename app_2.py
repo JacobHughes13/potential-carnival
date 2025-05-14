@@ -228,27 +228,34 @@ def cancel_lobby() -> Response:
 def join_lobby() -> Response | str:
     if 'username' not in session:
         return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        code = request.form['lobby_code'].upper()
-        if code in rooms and rooms[code]['guest'] is None:
-            return redirect(url_for('game', lobby_code=code))
-        flash('Неправильный код комнаты или она заполнена')
+    print(request.form)
+    code = request.form['lobby_code'].upper()
+    print(7, code, rooms)
+    if code in rooms and rooms[code]['guest'] is None:
+        rooms[code]['guest'] = session['username']
+        user_rooms[session['username']] = code
+        print(rooms)
+        print(user_rooms)
+        return redirect(url_for('game', lobby_code=code))
+    flash('Неправильный код комнаты или она заполнена')
 
     return render_template('join_lobby.html')
 
 
 @app.route('/game/<lobby_code>')
 def game(lobby_code: str) -> Response | str:
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    if lobby_code not in rooms:
+    # print(2)
+    # print(session)
+    # if 'username' not in session:
+    #     print(3)
+    #     return redirect(url_for('login'))
+    if lobby_code not in rooms.keys():
         flash('Лобби не найдено.')
+        print(4, lobby_code, rooms.keys())
         return redirect(url_for('lobby'))
-
     room = rooms[lobby_code]
     username = session['username']
+    print(room['host'], room['guest'])
     if username not in [room['host'], room['guest']]:
         flash('You are not in this lobby')
         return redirect(url_for('lobby'))
@@ -285,9 +292,9 @@ def handle_connect() -> None:
 def handle_disconnect() -> None:
     if 'username' not in session:
         return
-
+    print(session)
     username = session['username']
-    print(f'User {username} disconnected')
+    print(f'Пользователь {username} отключился.')
     if username in user_rooms:
         room_code = user_rooms[username]
         room = rooms.get(room_code)
@@ -296,7 +303,7 @@ def handle_disconnect() -> None:
                 room['host'] = None
             else:
                 room['guest'] = None
-
+            print(room)
             if room['state'] == GameStates.PLAYING:
                 emit('player_disconnected',
                      {'username': username},

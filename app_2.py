@@ -1,13 +1,16 @@
 from flask import Flask, render_template, redirect, url_for, session, request, flash, Response
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.security import generate_password_hash, check_password_hash
-from random import choices, randint
-import string, os
-from datetime import datetime
-from deck import Deck, User, Friend, Card, SqlAlchemyBase
+from random import choices
+import string
+import os
+from datetime import datetime as dt
+from deck import Deck, User, Friend
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+from threading import Lock
 
+room_lock = Lock()
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -210,7 +213,7 @@ def create_lobby() -> Response | str:
         'guest': None,
         'deck': Deck(db_path),
         'state': GameStates.WAITING,
-        'last_action': datetime.now()
+        'last_action': dt.now()
     }
     user_rooms[session['username']] = code
     return render_template('create_lobby.html', lobby_code=code)
@@ -290,16 +293,17 @@ def handle_connect() -> None:
 @socketio.on('disconnect')
 def handle_disconnect() -> None:
     username = session.get('username')
-    if not username:
+    if not username or username not in user_rooms:
         return
 
-    print(f'Пользователь {username} временно отключился.')
-
-    if username in user_rooms:
-        room_code = user_rooms[username]
+    room_code = user_rooms[username]
+    with room_lock:
         room = rooms.get(room_code)
-        if room:
-            room['last_action'] = datetime.now()
+        if not room:
+            return
+        # фиксируем время &laquo;потери связи&raquo;
+        room.setdefault('disconnected', {})[username] = dt.now()
+    print(f'Игрок {username} потерял соединение; ждём возврата до 60 с.')
 
 
 @socketio.on('create_room')
@@ -319,7 +323,7 @@ def handle_create_room() -> None:
         'guest'      : None,
         'deck'       : Deck(db_path),
         'state'      : GameStates.WAITING,
-        'last_action': datetime.now()
+        'last_action': dt.now()
     }
     user_rooms[username] = room_code
     join_room(room_code)
@@ -386,19 +390,25 @@ def handle_game_action(data) -> None:
     username   = session['username']
     room_code  = data.get('room', '').upper()
     action_type = data.get('type')
+
     if room_code not in rooms:
         emit('error',
              {'message': 'Комната не найдена'})
         return
-
     room = rooms[room_code]
     deck = room['deck']
+
     if username not in [room['host'], room['guest']]:
         emit('error',
              {'message': 'Вы не участник этой комнаты'})
         return
 
     player_id = 1 if username == room['host'] else 2
+    if action_type in ('place_card', 'end_turn'):
+        with room_lock:
+            room.setdefault('moves', {1: 0, 2: 0})
+            room['moves'][player_id] += 1
+
     if deck.turn_stage == 0 and player_id != 1 or deck.turn_stage == 1 and player_id != 2:
         emit('error',
              {'message': 'Сейчас не ваш ход'})
@@ -432,7 +442,7 @@ def handle_game_action(data) -> None:
                  {'message': 'Неизвестное действие'})
             return
 
-        room['last_action'] = datetime.now()
+        room['last_action'] = dt.now()
         update_game_state(room_code)
     except Exception as e:
         emit('error',
@@ -502,7 +512,47 @@ def handle_leave_room(data) -> None:
          to=request.sid)
 
 
+def room_cleanup() -> None:
+    """Каждые 10 с удаляем комнаты, где кто-то отсутствует > 60 с."""
+    while True:
+        socketio.sleep(10)
+        now = dt.now()
+        with room_lock:
+            for code, room in list(rooms.items()):
+                disc = room.get('disconnected', {})
+                to_drop = [u for u, t in disc.items()
+                           if (now - t).total_seconds() > 60]
+                if not to_drop:
+                    continue
+
+                for user in to_drop:
+                    print(f'Игрок {user} не вернулся в комнату {code}')
+                    disc.pop(user, None)
+                    # выкидываем из host/guest и user_rooms
+                    if room.get('host') == user:
+                        room['host'] = None
+                    if room.get('guest') == user:
+                        room['guest'] = None
+                    user_rooms.pop(user, None)
+
+                host, guest = room.get('host'), room.get('guest')
+                # оба вышли; тихо удаляем
+                if host is None and guest is None:
+                    del rooms[code]
+                    continue
+
+                # остался один игрок
+                moves = room.get('moves', {1: 0, 2: 0})
+                if (moves[1] > 0 and moves[2] > 0):
+                    winner_id = 1 if host else 2
+                    socketio.emit('game_over',
+                                  {'winner': winner_id},
+                                  room=code)
+                del rooms[code]
+
+
 def main() -> None:
+    socketio.start_background_task(room_cleanup)
     socketio.run(app=app, host='127.0.0.1', port=8080,
                  debug=True, allow_unsafe_werkzeug=True)
 

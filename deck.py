@@ -64,7 +64,7 @@ class Deck:
             for col_idx, card in enumerate(row):
                 if card is None:
                     visible_row.append(None)
-                else:
+                elif card:
                     if ((player_id == 1 and row_idx >= 2) or
                             (player_id == 2 and row_idx <= 1)):
                         visible_row.append({'name': '?', 'attack': '?', 'health': '?'})

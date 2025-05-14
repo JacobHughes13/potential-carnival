@@ -490,3 +490,78 @@ body {
     background-color: #f44336;
     color: white;
 }
+
+/* Добавлено к существующим стилям */
+.balance-bar {
+    height: 8px;
+    background: linear-gradient(
+        to right,
+        var(--danger) 0%,
+        var(--danger) 50%,
+        var(--success) 50%,
+        var(--success) 100%
+    );
+    border-radius: 4px;
+    position: relative;
+    margin-top: 5px;
+}
+
+.balance-bar::after {
+    content: "";
+    position: absolute;
+    left: calc(var(--balance, 50)%);
+    top: -2px;
+    bottom: -2px;
+    width: 3px;
+    background: white;
+    transform: translateX(-50%);
+    transition: left 0.3s ease;
+}
+
+.grid-container {
+    gap: 15px;
+    padding: 20px;
+}
+
+.grid-cell {
+    min-height: 120px;
+    min-width: 120px;
+    background: var(--card-bg);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.2s;
+}
+
+.grid-cell:hover {
+    transform: scale(1.02);
+}
+
+.card.player1 {
+    border-color: var(--primary);
+    background: linear-gradient(45deg, rgba(88, 101, 242, 0.1), transparent);
+}
+
+.card.player2 {
+    border-color: var(--secondary);
+    background: linear-gradient(45deg, rgba(235, 69, 158, 0.1), transparent);
+}
+
+.empty-slot {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+/* Адаптация под мобильные устройства */
+@media (max-width: 768px) {
+    .grid-cell {
+        min-height: 80px;
+        min-width: 80px;
+    }
+
+    .card-name {
+        font-size: 0.9rem;
+    }
+
+    .card-stats span {
+        font-size: 0.8rem;
+    }
+}

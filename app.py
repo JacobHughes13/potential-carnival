@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*")  # , async_mode='eventlet'
 
 # Инициализация базы данных и игры
 deck = Deck('sqlite:///BD/BD.db')
@@ -238,22 +238,22 @@ def handle_game_action(data):
 
 
 def update_game_state(room_code):
-    if room_code not in rooms:
-        return
-
     room = rooms[room_code]
-    host_state = room['deck'].get_game_state(1)
-    guest_state = room['deck'].get_game_state(2)
+    deck_ = room['deck']
 
-    emit('game_update', {
-        'game_state': host_state,
-        'current_player': room['deck'].turn_stage + 1
-    }, room=room_code)
+    # Отправка состояния обоим игрокам
+    for player_id in [1, 2]:
+        state = deck_.get_game_state(player_id)
+        emit('game_update', {
+            'game_state': state,
+            'current_player': deck_.turn_stage + 1
+        }, room=f"{room_code}_player{player_id}")
 
-    emit('game_update', {
-        'game_state': guest_state,
-        'current_player': room['deck'].turn_stage + 1
-    }, room=room_code)
+    # Проверка победы
+    if deck_.damage_balance >= 10:
+        emit('game_over', {'winner': 1}, room=room_code)
+    elif deck_.damage_balance <= -10:
+        emit('game_over', {'winner': 2}, room=room_code)
 
 
 def cleanup_empty_rooms():
@@ -420,6 +420,7 @@ def handle_create_room():
 
     username = session['username']
     if username in user_rooms:
+        emit('error', {'message': 'Вы уже в лобби'})
         return
 
     room_code = generate_lobby_code()
@@ -427,59 +428,42 @@ def handle_create_room():
         'host': username,
         'guest': None,
         'deck': Deck(db_path),
-        'state': 'waiting',
+        'state': GameStates.WAITING,
         'last_action': datetime.now()
     }
     user_rooms[username] = room_code
-
     join_room(room_code)
-    join_room(f"{room_code}_host")  # Специальная комната для хоста
 
-    emit('room_created', {
-        'room': room_code,
-        'host': username
+    emit('room_created', {'room': room_code}, room=request.sid)
+    emit('lobby_update', {
+        'status': 'Ожидание игрока...',
+        'code': room_code
     }, room=room_code)
 
 
-@socketio.on('join_lobby')
-def handle_join_lobby(data):
-    if 'username' not in session:
-        emit('error', {'message': 'Not authorized'})
-        return
-
-    username = session['username']
-    room_code = data.get('room', '').upper()
+@socketio.on('/join_room')
+def handle_join_room(data):
+    room_code = data['room'].upper()
+    username = session.get('username')
 
     if room_code not in rooms:
-        emit('error', {'message': 'Room not found'})
+        emit('error', {'message': 'Лобби не найдено'})
         return
 
-    room = rooms[room_code]
+    if rooms[room_code]['guest']:
+        emit('error', {'message': 'Лобби заполнено'})
+        return
 
-    if room['guest'] is None:
-        # Подключаем второго игрока
-        room['guest'] = username
-        user_rooms[username] = room_code
-        room['state'] = GameStates.PLAYING
-        room['last_action'] = datetime.now()
+    rooms[room_code]['guest'] = username
+    user_rooms[username] = room_code
+    join_room(room_code)
 
-        room['deck'].reset()
-
-        join_room(room_code)
-        emit('game_started', {
-            'room': room_code,
-            'opponent': room['host'],
-            'player_id': 2
-        }, to=request.sid)
-
-        emit('opponent_joined', {
-            'username': username,
-            'player_id': 1
-        }, room=f"player_{room['host']}")
-
-        update_game_state(room_code)
-    else:
-        emit('error', {'message': 'Room is full'})
+    # Запуск игры при заполнении лобби
+    emit('game_start', {'room': room_code}, room=room_code)
+    emit('lobby_update', {
+        'status': 'Игра начинается!',
+        'code': room_code
+    }, room=room_code)
 
 
 @socketio.on('game_action')
@@ -629,8 +613,6 @@ def handle_leave_room(data):
     emit('left_room', {'room': room_code})
 
 
-
-
 @app.route("/settings")
 def settings():
     return "Настройки настраиваются"  # Заглушка
@@ -681,7 +663,7 @@ def logout():
     return redirect(url_for("login"))
 
 def main() -> None:
-    socketio.run(app=app, port=8080, host='127.0.0.1', debug=True)
+    socketio.run(app=app, port=8080, host='127.0.0.1', debug=True, allow_unsafe_werkzeug=True)
 
 
 if __name__ == '__main__':

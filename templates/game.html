@@ -6,51 +6,6 @@
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        .card-preview {
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .card-preview:hover {
-            background-color: #f5f5f5;
-        }
-        .card-preview.selected {
-            border: 2px solid gold;
-            background-color: #fffacd;
-        }
-        .grid-cell {
-            position: relative;
-            min-height: 120px;
-            border: 1px solid #eee;
-        }
-        .empty-slot {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            cursor: pointer;
-        }
-        .slot-content {
-            font-size: 2rem;
-            color: #eee;
-        }
-        #connection-status {
-            padding: 5px;
-            border-radius: 5px;
-            margin: 5px 0;
-        }
-        .connected {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .disconnected {
-            background-color: #f44336;
-            color: white;
-        }
-    </style>
 </head>
 <body>
     <div class="game-container game-layout">
@@ -61,12 +16,11 @@
             <div class="player-info">
                 <h2 id="player-id">Игрок: {{ username }}</h2>
                 <h3 id="opponent-name">Противник: {{ opponent }}</h3>
-                <div id="connection-status" class="connected">
-                    ● Соединение установлено
+                <div class="balance-indicator">
+                    <p><strong>Баланс:</strong> <span id="balance-amount">{{ game_state.damage_balance }}</span></p>
+                    <div class="balance-bar" style="--balance: {{ (game_state.damage_balance + 10) * 5 }}%"></div>
                 </div>
-                <p id="current-player-info">Ожидание хода...</p>
                 <p><strong>Монеты:</strong> <span id="coins-amount">{{ game_state.coins }}</span> 💰</p>
-                <p><strong>Баланс:</strong> <span id="balance-amount">{{ game_state.damage_balance }}</span></p>
             </div>
 
             <div class="controls">
@@ -80,7 +34,9 @@
                 <div id="available-cards" class="card-selection">
                     {% for card_id in game_state.available_cards %}
                     <div class="card-preview" data-card-id="{{ card_id }}">
-                        Карта #{{ card_id }}
+                        {{ deck.get_card_by_id(card_id).name }}
+                        (⚔️{{ deck.get_card_by_id(card_id).attack }}
+                        ❤️{{ deck.get_card_by_id(card_id).health }})
                     </div>
                     {% endfor %}
                 </div>
@@ -100,7 +56,7 @@
                                 <span>❤️{{ game_state.grid[row][col].health }}</span>
                             </div>
                         </div>
-                        {% elif (player_id == 1 and row == 0) or (player_id == 2 and row == 3) %}
+                        {% else %}
                         <div class="empty-slot">
                             <div class="slot-content">+</div>
                         </div>

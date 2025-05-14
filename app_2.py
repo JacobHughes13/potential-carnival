@@ -213,8 +213,7 @@ def create_lobby() -> Response | str:
         'last_action': datetime.now()
     }
     user_rooms[session['username']] = code
-    return render_template('create_lobby.html',
-                           lobby_code=code)
+    return render_template('create_lobby.html', lobby_code=code)
 
 
 @app.route('/cancel_lobby', methods=['POST'])
@@ -231,27 +230,31 @@ def join_lobby() -> Response | str:
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        code = request.form['lobby_code'].upper()
+        code = request.form.get('lobby_code', '').upper()
         if code in rooms and rooms[code]['guest'] is None:
-            return redirect(url_for('game',
-                                    lobby_code=code))
-
+            rooms[code]['guest'] = session['username']
+            user_rooms[session['username']] = code
+            return redirect(url_for('game', lobby_code=code))
         flash('Неправильный код комнаты или она заполнена')
 
+    # GET-запрос просто отрисовывает страницу
     return render_template('join_lobby.html')
 
 
 @app.route('/game/<lobby_code>')
 def game(lobby_code: str) -> Response | str:
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    if lobby_code not in rooms:
+    # print(2)
+    # print(session)
+    # if 'username' not in session:
+    #     print(3)
+    #     return redirect(url_for('login'))
+    if lobby_code not in rooms.keys():
         flash('Лобби не найдено.')
+        print(4, lobby_code, rooms.keys())
         return redirect(url_for('lobby'))
-
     room = rooms[lobby_code]
     username = session['username']
+    print(room['host'], room['guest'])
     if username not in [room['host'], room['guest']]:
         flash('You are not in this lobby')
         return redirect(url_for('lobby'))
@@ -286,28 +289,17 @@ def handle_connect() -> None:
 
 @socketio.on('disconnect')
 def handle_disconnect() -> None:
-    if 'username' not in session:
+    username = session.get('username')
+    if not username:
         return
 
-    username = session['username']
-    print(f'User {username} disconnected')
+    print(f'Пользователь {username} временно отключился.')
+
     if username in user_rooms:
         room_code = user_rooms[username]
         room = rooms.get(room_code)
         if room:
-            if username == room['host']:
-                room['host'] = None
-            else:
-                room['guest'] = None
-
-            if room['state'] == GameStates.PLAYING:
-                emit('player_disconnected',
-                     {'username': username},
-                     room=room_code)
-
-            if room['host'] is None and room['guest'] is None:
-                del rooms[room_code]
-        del user_rooms[username]
+            room['last_action'] = datetime.now()
 
 
 @socketio.on('create_room')
@@ -340,38 +332,47 @@ def handle_create_room() -> None:
 @socketio.on('join_room')
 def handle_join_room(data) -> None:
     room_code = data.get('room', '').upper()
-    if 'username' not in session:
+    username = session.get('username')
+
+    if not username:
         emit('error',
-             {'message': 'Не авторизован'})
+             {'message': 'Требуется авторизация'})
         return
 
-    username = session['username']
     if room_code not in rooms:
         emit('error',
-             {'message': 'Лобби не найдено'})
+             {'message': 'Лобби не найдено'},
+             to=request.sid)
         return
 
     room = rooms[room_code]
-    if username == room['host']:
-        join_room(room_code)
-        join_room(f"{room_code}_player1")
-        user_rooms[username] = room_code
-        emit('room_joined',
-             {'room': room_code, 'users': [room['host']]}, to=request.sid)
-        return
 
     if room['guest']:
         emit('error',
-             {'message': 'Лобби заполнено'})
+             {'message': 'Лобби заполнено'},
+             to=request.sid)
         return
 
     room['guest'] = username
     user_rooms[username] = room_code
+
     join_room(room_code)
     join_room(f"{room_code}_player2")
+
     emit('game_start',
          {'room': room_code},
          room=room_code)
+
+    emit('room_update', {
+        'host': room['host'],
+        'guest': room['guest'],
+        'status': 'ready'
+    }, room=room_code)
+
+    emit('redirect',
+         {'url': f'/game/{room_code}'},
+         to=request.sid)
+
     update_game_state(room_code)
 
 

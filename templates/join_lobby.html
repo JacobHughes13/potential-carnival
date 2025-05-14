@@ -15,7 +15,8 @@
     </div>
 
     <form class="menu-cards"
-          style="align-items:center;">
+          style="align-items:center;"
+          id="join-form">
       <label for="lobby_code"
              class="menu-card-desc"
              style="font-size:1.2rem;">
@@ -23,6 +24,7 @@
       </label>
       <input type="text"
              id="lobby_code"
+             name="lobby_code"
              class="control-button"
              style="padding:0.5rem 1rem;font-size:1rem;margin-bottom:1rem;"
              required>
@@ -35,19 +37,23 @@
   <script>
     const socket = io();
 
-    /* Отправляем код через Socket.IO, не выполняя POST */
-    document.querySelector('form').addEventListener('submit', e => {
+    document.getElementById('join-form').addEventListener('submit', e => {
       e.preventDefault();
       const code = document.getElementById('lobby_code').value.trim().toUpperCase();
-      if (code) socket.emit('join_room', { room: code });
+      if (code) {
+        socket.emit('join_room', { room: code });   // становимся гостем
+      }
     });
 
-    /* Как только оба игрока в комнате, сервер шлёт game_start  */
+    /* Когда оба игрока готовы, сервер шлёт game_start */
     socket.on('game_start', data => {
       window.location.href = `/game/${data.room}`;
     });
 
-    socket.on('error', data => alert(data.message));
+    socket.on('error', data => {
+      alert(data.message);
+      window.location.reload();
+    });
   </script>
 </body>
 </html>

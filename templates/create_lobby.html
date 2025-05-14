@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Создать лобби | Card Battle</title>
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap">
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <title>Создать лобби | Card Battle</title>
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap">
+  <link rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <div class="game-container menu-container fade-in">
@@ -18,13 +18,14 @@
       <p class="menu-card-desc">Ваш код лобби:</p>
       <h2 class="title"
           style="font-size: 2.5rem;">{{ lobby_code }}</h2>
+
       <div id="connection-status"
            class="connected">● Соединение установлено</div>
       <p class="menu-card-desc">Ожидание второго игрока…</p>
     </div>
 
-    <form action="{{ url_for('cancel_lobby') }}"
-          method="post">
+    <form method="post"
+          action="{{ url_for('cancel_lobby') }}">
       <button class="control-button"
               style="margin-top: 1.5rem;">Отменить</button>
     </form>
@@ -35,12 +36,18 @@
     const socket    = io();
     const lobbyCode = "{{ lobby_code }}";
 
-    /* Хост подключается к комнате, чтобы сервер начал слать ему события */
+    /* Хост уже в комнате (handle_connect). Следим только за статусом */
     socket.on('connect', () => {
-      socket.emit('join_room', { room: lobbyCode });
+      document.getElementById('connection-status').className = 'connected';
+      document.getElementById('connection-status').textContent = '● Соединение установлено';
     });
 
-    /* Как только второй игрок присоединился — сервер шлёт game_start */
+    socket.on('disconnect', () => {
+      document.getElementById('connection-status').className = 'disconnected';
+      document.getElementById('connection-status').textContent = '● Соединение потеряно';
+    });
+
+    /* Когда гость вошёл, сервер шлёт game_start обоим */
     socket.on('game_start', data => {
       window.location.href = `/game/${data.room}`;
     });

@@ -30,24 +30,26 @@
               class="control-button">Подключиться</button>
     </form>
   </div>
-
   <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
   <script>
-    const socket = io();
+      document.querySelector('form').addEventListener('submit', e => {
+          e.preventDefault();
+          const code = document.getElementById('lobby_code').value.trim().toUpperCase();
+          console.log("Joining room:", code);
+          if (code) {
+              socket.emit('join_room', { room: code });
+              // Добавляем обработчик успешного присоединения
+              socket.on('room_joined', () => {
+                  window.location.href = `/game/${code}`;
+              });
+          }
+      });
 
-    /* Отправляем код через Socket.IO, не выполняя POST */
-    document.querySelector('form').addEventListener('submit', e => {
-      e.preventDefault();
-      const code = document.getElementById('lobby_code').value.trim().toUpperCase();
-      if (code) socket.emit('join_room', { room: code });
-    });
-
-    /* Как только оба игрока в комнате, сервер шлёт game_start  */
-    socket.on('game_start', data => {
-      window.location.href = `/game/${data.room}`;
-    });
-
-    socket.on('error', data => alert(data.message));
+      // Обработчик ошибок
+      socket.on('error', data => {
+          alert(data.message);
+          window.location.reload();
+      });
   </script>
 </body>
 </html>

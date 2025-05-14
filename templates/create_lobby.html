@@ -9,23 +9,43 @@
           href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="game-container menu-container fade-in">
-        <div class="menu-header">
-            <h1 class="title pulse">Лобби создано</h1>
-        </div>
+  <div class="game-container menu-container fade-in">
+    <div class="menu-header">
+      <h1 class="title pulse">Лобби создано</h1>
+    </div>
 
-        <!-- Добавлен индикатор подключения -->
     <div class="lobby-box">
-        <p class="menu-card-desc">Ваш код лобби:</p>
-        <h2 class="title" style="font-size: 2.5rem;">{{ lobby_code }}</h2>
-        <div id="connection-status" class="connected">● Соединение установлено</div>
-        <p class="menu-card-desc">Ожидание второго игрока...</p>
+      <p class="menu-card-desc">Ваш код лобби:</p>
+      <h2 class="title"
+          style="font-size: 2.5rem;">{{ lobby_code }}</h2>
+      <div id="connection-status"
+           class="connected">● Соединение установлено</div>
+      <p class="menu-card-desc">Ожидание второго игрока…</p>
     </div>
 
-        <form action="{{ url_for('cancel_lobby') }}" method="post">
-            <button class="control-button"
-                    style="margin-top: 1.5rem;">Отменить</button>
-        </form>
-    </div>
+    <form action="{{ url_for('cancel_lobby') }}"
+          method="post">
+      <button class="control-button"
+              style="margin-top: 1.5rem;">Отменить</button>
+    </form>
+  </div>
+
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script>
+    const socket    = io();
+    const lobbyCode = "{{ lobby_code }}";
+
+    /* Хост подключается к комнате, чтобы сервер начал слать ему события */
+    socket.on('connect', () => {
+      socket.emit('join_room', { room: lobbyCode });
+    });
+
+    /* Как только второй игрок присоединился — сервер шлёт game_start */
+    socket.on('game_start', data => {
+      window.location.href = `/game/${data.room}`;
+    });
+
+    socket.on('error', data => alert(data.message));
+  </script>
 </body>
 </html>

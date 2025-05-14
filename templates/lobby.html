@@ -1,51 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Лобби</title>
-    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Лобби</title>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 </head>
 <body>
-    <h1>Привет, {{ username }}!</h1>
+  <h1>Привет, {{ username }}!</h1>
 
-    <button onclick="createRoom()">Создать комнату</button>
-    <br><br>
-    <input type="text"
-           id="roomCode"
-           placeholder="Введите код комнаты">
-    <button onclick="joinRoom()">Присоединиться</button>
+  <a href="{{ url_for('create_lobby') }}">
+    <button>Создать комнату</button>
+  </a>
+  <br><br>
 
-    <div id="lobbyStatus"></div>
+  <input type="text"
+         id="roomCode"
+         placeholder="Введите код комнаты">
+  <button onclick="joinRoom()">Присоединиться</button>
 
-    <script>
-        const socket = io();
-        function createRoom() {
-            console.log("Попытка создания комнаты...");
-            socket.emit("create_room", {}, (response) => {
-                if (response.error) {
-                    alert(response.error);
-                } else {
-                    window.location.href = `/game/${response.room}`;
-                }
-            });
-        }
+  <div id="lobbyStatus"></div>
 
+  <script>
+    const socket = io();
 
-        function joinRoom() {
-            const code = document.getElementById("roomCode").value.toUpperCase();
-            socket.emit("join_room", { room: code });
-        }
+    function joinRoom() {
+      const code = document.getElementById('roomCode').value.trim().toUpperCase();
+      if (code) socket.emit('join_room', { room: code });
+    }
 
-        socket.on("room_created", data => {
-            document.getElementById("lobbyStatus").innerText = "Комната создана: " + data.room;
-        });
+    socket.on('room_joined', data => {
+      document.getElementById('lobbyStatus').innerText =
+        `Вы в комнате: ${data.room}\nУчастники: ${data.users.join(', ')}`;
+    });
 
-        socket.on("room_joined", data => {
-            document.getElementById("lobbyStatus").innerText = "Вы в комнате: " + data.room + "\nУчастники: " + data.users.join(", ");
-        });
+    socket.on('error', data => alert(data.message));
 
-        socket.on("error", data => {
-            alert(data.message);
-        });
-    </script>
+    /* Когда гостя приняли, а хост уже в комнате, сервер шлёт game_start  */
+    socket.on('game_start', data => {
+      window.location.href = `/game/${data.room}`;
+    });
+  </script>
 </body>
 </html>

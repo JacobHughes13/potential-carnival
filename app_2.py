@@ -3,6 +3,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.security import generate_password_hash, check_password_hash
 from random import choices
 
+
 from datetime import datetime as dt
 from deck import Deck, User, Friend
 from sqlalchemy.orm import sessionmaker
@@ -215,11 +216,13 @@ def create_lobby() -> Response | str:
 
     code = generate_lobby_code()
     rooms[code] = {
-        'host': session['username'],
-        'guest': None,
-        'deck': Deck(db_path),
-        'state': GameStates.WAITING,
-        'last_action': dt.now()
+        'host'            : session['username'],
+        'guest'           : None,
+        'deck'            : Deck(db_path),
+        'state'           : GameStates.WAITING,
+        'last_action'     : dt.now(),
+        'connected'       : {1: True, 2: False},
+        'disconnect_timer': {1: None, 2: None}
     }
     user_rooms[session['username']] = code
     return render_template('create_lobby.html', lobby_code=code)
@@ -580,11 +583,10 @@ def disconnect_watcher() -> None:
 
 
 def main() -> None:
+    Thread(target=disconnect_watcher, daemon=True).start()
     socketio.run(app=app, host='127.0.0.1', port=8080,
                  debug=True, allow_unsafe_werkzeug=True)
 
 
-
 if __name__ == '__main__':
-    Thread(target=disconnect_watcher, daemon=True).start()
     main()

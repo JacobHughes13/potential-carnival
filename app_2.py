@@ -11,7 +11,6 @@ from sqlalchemy import create_engine
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 socketio = SocketIO(app, cors_allowed_origins="*")
-
 deck      = Deck('sqlite:///BD/BD.db')
 db_path   = 'sqlite:///BD/BD.db'
 engine    = create_engine(db_path)
@@ -89,7 +88,7 @@ def register() -> Response | str:
         sess = db_session
         if sess.query(User).filter_by(username=username).first():
             flash('Пользователь уже существует!')
-            # return redirect(url_for('register'))
+            return redirect(url_for('register'))
         sess.add(User(username=username,
                       password=password))
         sess.commit()
@@ -243,18 +242,13 @@ def join_lobby() -> Response | str:
 
 @app.route('/game/<lobby_code>')
 def game(lobby_code: str) -> Response | str:
-    # print(2)
-    # print(session)
-    # if 'username' not in session:
-    #     print(3)
-    #     return redirect(url_for('login'))
+    if 'username' not in session:
+        return redirect(url_for('login'))
     if lobby_code not in rooms.keys():
         flash('Лобби не найдено.')
-        print(4, lobby_code, rooms.keys())
         return redirect(url_for('lobby'))
     room = rooms[lobby_code]
     username = session['username']
-    print(room['host'], room['guest'])
     if username not in [room['host'], room['guest']]:
         flash('You are not in this lobby')
         return redirect(url_for('lobby'))
@@ -262,8 +256,11 @@ def game(lobby_code: str) -> Response | str:
     player_id = 1 if username == room['host'] else 2
     opponent  = room['host'] if player_id == 2 else room['guest']
     game_state = room['deck'].get_game_state(player_id)
+    card_ids = session.get(f'available_cards_p{player_id}', [])
+    cards = [deck.get_card_by_id(cid) for cid in card_ids]
 
     return render_template('game.html',
+                           cards=cards,
                            lobby_code=lobby_code,
                            username=username,
                            opponent=opponent,
@@ -287,19 +284,19 @@ def handle_connect() -> None:
     print(f'Пользователь {username} подключился.')
 
 
-@socketio.on('disconnect')
-def handle_disconnect() -> None:
-    username = session.get('username')
-    if not username:
-        return
-
-    print(f'Пользователь {username} временно отключился.')
-
-    if username in user_rooms:
-        room_code = user_rooms[username]
-        room = rooms.get(room_code)
-        if room:
-            room['last_action'] = datetime.now()
+# @socketio.on('disconnect')
+# def handle_disconnect() -> None:
+#     username = session.get('username')
+#     if not username:
+#         return
+#
+#     print(f'Пользователь {username} временно отключился.')
+#
+#     if username in user_rooms:
+#         room_code = user_rooms[username]
+#         room = rooms.get(room_code)
+#         if room:
+#             room['last_action'] = datetime.now()
 
 
 @socketio.on('create_room')
@@ -385,34 +382,34 @@ def handle_game_action(data) -> None:
 
     username   = session['username']
     room_code  = data.get('room', '').upper()
-    action_type = data.get('type')
+    action_type = data.get('action')
     if room_code not in rooms:
         emit('error',
              {'message': 'Комната не найдена'})
         return
 
     room = rooms[room_code]
-    deck = room['deck']
+    deck_ = room['deck']
     if username not in [room['host'], room['guest']]:
         emit('error',
              {'message': 'Вы не участник этой комнаты'})
         return
 
     player_id = 1 if username == room['host'] else 2
-    if deck.turn_stage == 0 and player_id != 1 or deck.turn_stage == 1 and player_id != 2:
+    if deck_.turn_stage == 0 and player_id != 1 or deck_.turn_stage == 1 and player_id != 2:
         emit('error',
              {'message': 'Сейчас не ваш ход'})
         return
-
     try:
         if action_type == 'place_card':
-            if not deck.place_card(int(data['card_id']), player_id, int(data['col'])):
+            if not deck_.place_card(int(data['card_id']), player_id, int(data['col'])):
                 emit('error',
                      {'message': 'Невозможно разместить карту'})
                 return
 
         elif action_type == 'end_turn':
-            winner = deck.battle_phase(player_id)
+            print(1)
+            winner = deck_.battle_phase(player_id)
             if winner:
                 room['state'] = GameStates.FINISHED
                 emit('game_over',
@@ -420,18 +417,23 @@ def handle_game_action(data) -> None:
                      room=room_code)
                 return
 
-            deck.move_cards(player_id)
-            deck.end_turn(player_id)
-            deck.turn_stage = 1 if deck.turn_stage == 0 else 0
-            key      = f'available_cards_p{player_id}'
-            new_card = deck.get_random_card()
+            deck_.move_cards(player_id)
+            deck_.end_turn(player_id)
+            deck_.turn_stage = 1 if deck_.turn_stage == 0 else 0
+            key = f'available_cards_p{player_id}'
+            new_card = deck_.get_random_card()
+            print(new_card)
+            print(new_card.id)
             if new_card:
-                getattr(deck, key, []).append(new_card.id)
+                print(5)
+                print(deck_, key)
+                print(getattr(deck_, key, []))
+                getattr(deck_, key, []).append(new_card.id)
+                print(getattr(deck_, key, []))
         else:
             emit('error',
                  {'message': 'Неизвестное действие'})
             return
-
         room['last_action'] = datetime.now()
         update_game_state(room_code)
     except Exception as e:

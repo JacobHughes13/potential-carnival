@@ -1,12 +1,16 @@
 from flask import Flask, render_template, redirect, url_for, session, request, flash, Response
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.security import generate_password_hash, check_password_hash
-from random import choices, randint
-import string, os
-from datetime import datetime
-from deck import Deck, User, Friend, Card, SqlAlchemyBase
+from random import choices
+
+from datetime import datetime as dt
+from deck import Deck, User, Friend
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+import string
+import os
+from threading import Thread
+import time
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
@@ -37,7 +41,10 @@ def update_game_state(room_code: str) -> None:
     for pid in (1, 2):
         state = deck_.get_game_state(pid)
         emit('game_update',
-             {'game_state': state, 'current_player': deck_.turn_stage + 1},
+             {
+                 'game_state': state,
+                 'current_player': deck_.turn_stage + 1
+             },
              room=f"{room_code}_player{pid}")
 
     if deck_.damage_balance >= 10:
@@ -76,6 +83,7 @@ def login() -> Response | str:
             session['username'] = user.username
             return redirect(url_for('main_menu'))
         flash('Неверные имя пользователя или пароль!')
+
     return render_template('login.html')
 
 
@@ -89,11 +97,13 @@ def register() -> Response | str:
         if sess.query(User).filter_by(username=username).first():
             flash('Пользователь уже существует!')
             return redirect(url_for('register'))
+
         sess.add(User(username=username,
                       password=password))
         sess.commit()
         flash('Регистрация прошла успешно!')
         return redirect(url_for('login'))
+
     return render_template('register.html')
 
 
@@ -134,7 +144,7 @@ def profile() -> Response | str:
         return redirect(url_for("login"))
 
     username = session['username']
-    return f"Профиль игрока {username}"
+    return f"Профиль игрока {username}."
 
 
 @app.route("/friends", methods=["GET", "POST"])
@@ -209,7 +219,7 @@ def create_lobby() -> Response | str:
         'guest': None,
         'deck': Deck(db_path),
         'state': GameStates.WAITING,
-        'last_action': datetime.now()
+        'last_action': dt.now()
     }
     user_rooms[session['username']] = code
     return render_template('create_lobby.html', lobby_code=code)
@@ -220,6 +230,7 @@ def cancel_lobby() -> Response:
     for code, data in list(rooms.items()):
         if data['host'] == session.get('username'):
             del rooms[code]
+
     return redirect(url_for('choose_mode'))
 
 
@@ -234,9 +245,8 @@ def join_lobby() -> Response | str:
             rooms[code]['guest'] = session['username']
             user_rooms[session['username']] = code
             return redirect(url_for('game', lobby_code=code))
-        flash('Неправильный код комнаты или она заполнена')
+        flash('Неправильный код комнаты или она заполнена.')
 
-    # GET-запрос просто отрисовывает страницу
     return render_template('join_lobby.html')
 
 
@@ -244,13 +254,15 @@ def join_lobby() -> Response | str:
 def game(lobby_code: str) -> Response | str:
     if 'username' not in session:
         return redirect(url_for('login'))
+
     if lobby_code not in rooms.keys():
         flash('Лобби не найдено.')
         return redirect(url_for('lobby'))
+
     room = rooms[lobby_code]
     username = session['username']
     if username not in [room['host'], room['guest']]:
-        flash('You are not in this lobby')
+        flash('Вы не находитесь в этом лобби.')
         return redirect(url_for('lobby'))
 
     player_id = 1 if username == room['host'] else 2
@@ -270,33 +282,40 @@ def game(lobby_code: str) -> Response | str:
 
 @socketio.on('connect')
 def handle_connect() -> None:
-    if 'username' not in session:
+    username = session.get('username')
+    if not username or username not in user_rooms:
         return
 
-    username = session['username']
-    if username in user_rooms:
-        room_code = user_rooms[username]
-        if room_code in rooms:
-            join_room(room_code)
-            pid = 1 if rooms[room_code]['host'] == username else 2
-            join_room(f"{room_code}_player{pid}")
-            update_game_state(room_code)
-    print(f'Пользователь {username} подключился.')
+    room_code = user_rooms[username]
+    if room_code not in rooms:
+        return
+
+    room = rooms[room_code]
+    pid  = 1 if room['host'] == username else 2
+
+    room['connected'][pid] = True
+    room['disconnect_timer'][pid] = None
+
+    join_room(room_code)
+    join_room(f"{room_code}_player{pid}")
+
+    update_game_state(room_code)
 
 
-# @socketio.on('disconnect')
-# def handle_disconnect() -> None:
-#     username = session.get('username')
-#     if not username:
-#         return
-#
-#     print(f'Пользователь {username} временно отключился.')
-#
-#     if username in user_rooms:
-#         room_code = user_rooms[username]
-#         room = rooms.get(room_code)
-#         if room:
-#             room['last_action'] = datetime.now()
+@socketio.on('disconnect')
+def handle_disconnect() -> None:
+    username = session.get('username')
+    if not username or username not in user_rooms:
+        return
+
+    room_code = user_rooms[username]
+    room = rooms.get(room_code)
+    if not room:
+        return
+
+    pid = 1 if room['host'] == username else 2
+    room['connected'][pid] = False
+    room['disconnect_timer'][pid] = dt.now()
 
 
 @socketio.on('create_room')
@@ -312,11 +331,13 @@ def handle_create_room() -> None:
 
     room_code = generate_lobby_code()
     rooms[room_code] = {
-        'host'       : username,
-        'guest'      : None,
-        'deck'       : Deck(db_path),
-        'state'      : GameStates.WAITING,
-        'last_action': datetime.now()
+        'host'            : username,
+        'guest'           : None,
+        'deck'            : Deck(db_path),
+        'state'           : GameStates.WAITING,
+        'last_action'     : dt.now(),
+        'connected'       : {1: True, 2: False},
+        'disconnect_timer': {1: None, 2: None}
     }
     user_rooms[username] = room_code
     join_room(room_code)
@@ -380,9 +401,10 @@ def handle_game_action(data) -> None:
              {'message': 'Не авторизован'})
         return
 
-    username   = session['username']
-    room_code  = data.get('room', '').upper()
+    username = session['username']
+    room_code = data.get('room', '').upper()
     action_type = data.get('action')
+
     if room_code not in rooms:
         emit('error',
              {'message': 'Комната не найдена'})
@@ -390,16 +412,19 @@ def handle_game_action(data) -> None:
 
     room = rooms[room_code]
     deck_ = room['deck']
-    if username not in [room['host'], room['guest']]:
+    room_members = (room['host'], room['guest'])
+
+    if username not in room_members:
         emit('error',
              {'message': 'Вы не участник этой комнаты'})
         return
 
     player_id = 1 if username == room['host'] else 2
-    if deck_.turn_stage == 0 and player_id != 1 or deck_.turn_stage == 1 and player_id != 2:
+    if (deck_.turn_stage == 0 and player_id != 1) or (deck_.turn_stage == 1 and player_id != 2):
         emit('error',
              {'message': 'Сейчас не ваш ход'})
         return
+
     try:
         if action_type == 'place_card':
             if not deck_.place_card(int(data['card_id']), player_id, int(data['col'])):
@@ -408,7 +433,6 @@ def handle_game_action(data) -> None:
                 return
 
         elif action_type == 'end_turn':
-            print(1)
             winner = deck_.battle_phase(player_id)
             if winner:
                 room['state'] = GameStates.FINISHED
@@ -419,26 +443,54 @@ def handle_game_action(data) -> None:
 
             deck_.move_cards(player_id)
             deck_.end_turn(player_id)
+
             deck_.turn_stage = 1 if deck_.turn_stage == 0 else 0
-            key = f'available_cards_p{player_id}'
-            new_card = deck_.get_random_card()
-            print(new_card)
-            print(new_card.id)
-            if new_card:
-                print(5)
-                print(deck_, key)
-                print(getattr(deck_, key, []))
-                getattr(deck_, key, []).append(new_card.id)
-                print(getattr(deck_, key, []))
+
+        elif action_type == 'attack':
+            winner = deck_.battle_phase(player_id)
+            if winner:
+                room['state'] = GameStates.FINISHED
+                emit('game_over',
+                     {'winner': winner},
+                     room=room_code)
+                return
+
+        elif action_type == 'surrender':
+            room['state'] = GameStates.FINISHED
+            emit('game_over',
+                 {'winner': 2 if player_id == 1 else 1},
+                 room=room_code)
+            return
+
         else:
             emit('error',
                  {'message': 'Неизвестное действие'})
             return
-        room['last_action'] = datetime.now()
+
+        room['last_action'] = dt.now()
         update_game_state(room_code)
+
     except Exception as e:
-        emit('error',
-             {'message': f'Ошибка: {str(e)}'})
+        emit('error', {'message': f'Ошибка: {str(e)}'})
+
+
+@socketio.on('join_game')
+def handle_join_game(data):
+    lobby_code = data.get('lobby_code', '').upper()
+    username = session.get('username')
+    player_id = data.get('player_id')
+
+    if not (username and lobby_code in rooms):
+        emit('error', {'message': 'Лобби не найдено'})
+        return
+
+    join_room(lobby_code)
+    join_room(f"{lobby_code}_player{player_id}")
+
+    rooms[lobby_code]['connected'][player_id] = True
+    rooms[lobby_code]['last_action'] = dt.now()
+
+    update_game_state(lobby_code)
 
 
 @socketio.on('get_game_state')
@@ -504,6 +556,29 @@ def handle_leave_room(data) -> None:
          to=request.sid)
 
 
+def disconnect_watcher() -> None:
+    while True:
+        now = dt.now()
+        for code, room in list(rooms.items()):
+            for pid in (1, 2):
+                ts = room['disconnect_timer'].get(pid)
+                if ts and (now - ts).total_seconds() > 60:
+                    if pid == 1:
+                        room['host'] = None
+                    else:
+                        room['guest'] = None
+                    room['disconnect_timer'][pid] = None
+                    room['connected'][pid] = False
+
+                    emit('player_left',
+                         {'username': 'Игрок'},
+                         room=code)
+
+            if room['host'] is None and room['guest'] is None:
+                rooms.pop(code, None)
+        time.sleep(5)
+
+
 def main() -> None:
     socketio.run(app=app, host='127.0.0.1', port=8080,
                  debug=True, allow_unsafe_werkzeug=True)
@@ -511,4 +586,5 @@ def main() -> None:
 
 
 if __name__ == '__main__':
+    Thread(target=disconnect_watcher, daemon=True).start()
     main()

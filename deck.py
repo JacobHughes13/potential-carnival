@@ -421,6 +421,14 @@ class Deck:
             'turn_count'     : self.turn_count[player_id]
         }
 
+    def reset(self) -> None:
+        self.grid = [[None for _ in range(5)] for _ in range(4)]
+        self.damage_balance = 0
+        self.turn_stage = 0
+        self.coins = {1: 1, 2: 1}
+        self.income = {1: 1, 2: 1}
+        self.turn_count = {1: 0, 2: 0}
+
     def Tralalelo_Tralala(self):
         # шанс уклонения
         pass

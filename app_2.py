@@ -16,8 +16,8 @@ import time
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 socketio = SocketIO(app, cors_allowed_origins="*")
-deck      = Deck('sqlite:///BD/BD.db')
-db_path   = 'sqlite:///BD/BD.db'
+deck      = Deck('sqlite:///data/BD.db')
+db_path   = 'sqlite:///data/BD.db'
 engine    = create_engine(db_path)
 Session   = sessionmaker(bind=engine)
 db_session = Session()
@@ -572,10 +572,6 @@ def disconnect_watcher() -> None:
                         room['guest'] = None
                     room['disconnect_timer'][pid] = None
                     room['connected'][pid] = False
-
-                    emit('player_left',
-                         {'username': 'Игрок'},
-                         room=code)
 
             if room['host'] is None and room['guest'] is None:
                 rooms.pop(code, None)

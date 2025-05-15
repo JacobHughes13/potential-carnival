@@ -59,5 +59,16 @@
             {% endif %}
         </div>
     </div>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script>
+    const socket    = io();
+    socket.on('friend_invite', data => {
+      if (confirm(`${data.host} приглашает вас в игру. Принять?`)) {
+        window.location.href = `/game/${data.code}`;
+      }
+    });
+
+    socket.on('error', data => alert(data.message));
+  </script>
 </body>
 </html>

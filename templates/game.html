@@ -205,13 +205,12 @@
             // Update available cards
             const cardsContainer = document.getElementById('available-cards');
             cardsContainer.innerHTML = '';
-
             if (gameState.available_cards && gameState.available_cards.length) {
-                gameState.available_cards.forEach(cardId => {
-                    const cardElement = document.createElement('div');
-                    cardElement.className = 'card-preview';
-                    cardElement.textContent = `Карта #${cardId}`;
-                    cardElement.dataset.cardId = cardId;
+                gameState.available_cards.forEach(card => {
+                    const el   = document.createElement('div');
+                    el.className   = 'card-preview';
+                    el.dataset.cardId = card.id;
+                    el.innerText  = `${card.name} (⚔️${card.attack} ❤️${card.health})`;
 
                     if (selectedCardId === cardId) {
                         cardElement.classList.add('selected');
@@ -260,27 +259,6 @@
 
                             cardElement.appendChild(nameElement);
                             cardElement.appendChild(statsElement);
-
-                            // Make attackable cards clickable
-                            if ((playerId === 1 && row === 1) || (playerId === 2 && row === 2)) {
-                                if (card.ready_to_attack) {
-                                    cardElement.style.cursor = 'pointer';
-                                    cardElement.addEventListener('click', () => {
-                                        if (confirm(`Атаковать картой ${card.name}?`)) {
-                                            const targetRow = playerId === 1 ? 2 : 1;
-                                            socket.emit('game_action', {
-                                                action: 'attack',
-                                                room: lobbyCode,
-                                                player_id: playerId,
-                                                attacker_row: row,
-                                                attacker_col: col,
-                                                defender_row: targetRow,
-                                                defender_col: col
-                                            });
-                                        }
-                                    });
-                                }
-                            }
 
                             cell.appendChild(cardElement);
                         } else if ((playerId === 1 && row === 0) || (playerId === 2 && row === 3)) {

@@ -39,6 +39,12 @@
     socket.on('game_start', data => {
       window.location.href = `/game/${data.room}`;
     });
+
+    socket.on('friend_invite', data => {
+      if (confirm(`${data.host} приглашает вас в игру. Принять?`)) {
+          window.location.href = `/game/${data.code}`;
+      }
+    });
   </script>
 </body>
 </html>

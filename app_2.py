@@ -23,6 +23,7 @@ db_session = Session()
 
 rooms      = {}   # {code: {host, guest, deck, state, last_action}}
 user_rooms = {}   # {username: room_code}
+user_sids  = {}   # {username: sid}
 
 
 class GameStates:
@@ -82,6 +83,7 @@ def login() -> Response | str:
             session['user_id']  = user.id
             session['username'] = user.username
             return redirect(url_for('main_menu'))
+
         flash('Неверные имя пользователя или пароль!')
 
     return render_template('login.html')
@@ -174,6 +176,32 @@ def friends() -> Response | str:
                            friends=friends_list)
 
 
+@app.route('/invite/<friend_name>', methods=['POST'])
+def invite_friend(friend_name: str) -> Response:
+    host = session.get('username')
+    if not host:
+        return redirect('/login')
+
+    if host not in user_rooms:
+        flash('Сначала создайте лобби')
+        return redirect(url_for('friends'))
+
+    code = user_rooms[host]
+    sid  = user_sids.get(friend_name)
+    if sid:
+        socketio.emit('friend_invite',
+                      {
+                          'code': code,
+                          'host': host
+                      },
+                      to=sid)
+        flash('Приглашение отправлено!')
+    else:
+        flash('Друг не в сети :(')
+
+    return redirect(url_for('friends'))
+
+
 @app.route('/play_self')
 def play_self() -> Response:
     return redirect(url_for('play'))
@@ -199,29 +227,32 @@ def play() -> Response | str:
 
 
 @app.route("/pick_up_the_card/<int:card_id>")
-def pick_up_the_card(card_id: int):
+def pick_up_the_card(card_id: int) -> Response:
     session['selected_card'] = card_id
     return redirect(url_for("play"))
 
 
 @app.route("/place_card/<int:row>/<int:col>")
-def place_card(row: int, col: int):
+def place_card(row: int, col: int) -> Response:
     current_player = session.get('current_player', 1)
     card_key = f'available_cards_p{current_player}'
 
     if 'selected_card' in session:
         success = deck.place_card(session['selected_card'], current_player, col)
         if success:
+            card_key = f'available_cards_p{current_player}'
             if card_key in session:
-                session[card_key] = [cid for cid in session[card_key]
-                                     if cid != session['selected_card']]
+                cards = list(session[card_key])
+                if session['selected_card'] in cards:
+                    cards.remove(session['selected_card'])
+                session[card_key] = cards
             session.pop('selected_card', None)
+
     return redirect(url_for("play"))
 
 
-
 @app.route("/player1_turn")
-def player1_turn():
+def player1_turn() -> str | Response:
     player_id = 1
     winner = deck.battle_phase(player_id)
     if winner:
@@ -244,7 +275,7 @@ def player1_turn():
 
 
 @app.route("/player2_turn")
-def player2_turn():
+def player2_turn() -> str | Response:
     player_id = 2
     winner = deck.battle_phase(player_id)
     if winner:
@@ -267,7 +298,7 @@ def player2_turn():
 
 
 @app.route("/reset")
-def reset():
+def reset() -> Response:
     deck.reset()
     session['current_player'] = 1
     session.pop('selected_card', None)
@@ -375,6 +406,7 @@ def handle_connect() -> None:
     room = rooms[room_code]
     pid  = 1 if room['host'] == username else 2
 
+    user_sids[username] = request.sid
     room['connected'][pid] = True
     room['disconnect_timer'][pid] = None
 
@@ -398,6 +430,7 @@ def handle_disconnect() -> None:
     pid = 1 if room['host'] == username else 2
     room['connected'][pid] = False
     room['disconnect_timer'][pid] = dt.now()
+    user_sids.pop(username, None)
 
 
 @socketio.on('create_room')
@@ -528,15 +561,6 @@ def handle_game_action(data) -> None:
 
             deck_.turn_stage = 1 if deck_.turn_stage == 0 else 0
 
-        elif action_type == 'attack':
-            winner = deck_.battle_phase(player_id)
-            if winner:
-                room['state'] = GameStates.FINISHED
-                emit('game_over',
-                     {'winner': winner},
-                     room=room_code)
-                return
-
         elif action_type == 'surrender':
             room['state'] = GameStates.FINISHED
             emit('game_over',
@@ -630,7 +654,8 @@ def handle_leave_room(data) -> None:
         del rooms[room_code]
     else:
         emit('player_left',
-             {'username': username}, room=room_code)
+             {'username': username},
+             room=room_code)
 
     user_rooms.pop(username, None)
     emit('left_room',

@@ -15,8 +15,8 @@ import time
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24).hex())
 socketio = SocketIO(app, cors_allowed_origins="*")
-deck      = Deck('sqlite:///BD/BD.db')
-db_path   = 'sqlite:///BD/BD.db'
+deck      = Deck('sqlite:///data/BD.db')
+db_path   = 'sqlite:///data/BD.db'
 engine    = create_engine(db_path)
 Session   = sessionmaker(bind=engine)
 db_session = Session()

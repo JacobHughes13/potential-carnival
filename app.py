@@ -228,6 +228,8 @@ def handle_game_action(data):
     room_code = data['room']
     action = data['action']
 
+
+
     if room_code not in rooms:
         return
 

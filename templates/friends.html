@@ -6,30 +6,35 @@
       href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Ваши друзья</h1>
+  <div class="friends-container">
+    <h1>Друзья</h1>
+
     <ul>
-    {% for friend in friends %}
-        <li>
-            {{ friend[0] }}
-            <form style="display:inline"
-                  action="/invite/{{ friend[0] }}"
-                  method="post">
-                <button class="control-button"
-                        type="submit">Пригласить</button>
-            </form>
+      {% for friend in friends %}
+        <li class="friend-item">
+          <span class="friend-name">{{ friend[0] }}</span>
+
+          <form action="/invite/{{ friend[0] }}"
+                method="post"
+                style="margin:0;">
+            <button class="invite-btn"
+                    type="submit">Пригласить</button>
+          </form>
         </li>
-    {% endfor %}
+      {% endfor %}
     </ul>
 
     <h2>Добавить друга</h2>
-    <form method="post">
-        <input type="text"
-               name="friend_username"
-               placeholder="Имя друга"
-               required>
-        <button type="submit">Добавить</button>
+    <form class="add-friend-form"
+          method="post">
+      <input type="text"
+             name="friend_username"
+             placeholder="Имя друга"
+             required>
+      <button type="submit">Добавить</button>
     </form>
 
-    <a href="/">На главную</a>
+    <a href="/" class="control-button">На главную</a>
+  </div>
 </body>
 </html>

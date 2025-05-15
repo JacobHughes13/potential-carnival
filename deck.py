@@ -277,7 +277,6 @@ class Card(SqlAlchemyBase):
 class Deck:
     def __init__(self, db_path: str = 'sqlite:///BD/BD.db') -> None:
         self.engine = create_engine(db_path, echo=False)
-
         SqlAlchemyBase.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.grid: list[list[Optional[Card]]] = [[None for _ in range(5)] for _ in range(4)]
@@ -286,6 +285,9 @@ class Deck:
         self.coins = {1: 1, 2: 1}
         self.income = {1: 1, 2: 1}
         self.turn_count = {1: 0, 2: 0}
+
+    # def __repr__(self):
+    #     return f'{}'
 
     def get_card_by_id(self, card_id: int) -> Optional[Card]:
         session = self.Session()
@@ -395,7 +397,7 @@ class Deck:
         return choice(cards) if cards else None
 
     def reset(self) -> None:
-        self.grid = [[None for _ in range(5)] for _ in range(4)]  # возможно надо убрать
+        self.grid = [[None for _ in range(5)] for _ in range(4)]
         self.damage_balance = 0
         self.turn_stage = 0
         self.coins = {1: 1, 2: 1}

@@ -438,10 +438,24 @@ class Deck:
         if attacker.name == "Frigo camelo" and defender:
             self.Frigo_camelo(attacker, defender)
 
+        return True
+
+    def _apply_kill_abilities(self, attacker, defender, player_id, col):
+        """Применяет способности после убийства"""
+        if attacker.name == "Brr Brr Patapim":
+            self.Brr_Brr_Patapim(attacker)
+            print(f"{attacker.name} потерял 1 к атаке за убийство!")
+
+        if defender.name == "Balerinna Cappucinna":
+            if not getattr(defender, 'debuff_applied', False):
+                attacker.attack = max(0, attacker.attack - 2)
+                defender.debuff_applied = True
+                print(f"{defender.name} уменьшил атаку убийцы на 2!")
+
         if attacker.name == "La Vaca Saturno Saturnita":
             if self.La_Vaca_Saturno_Saturnita(attacker):
+                defender.health -= 4
                 print(f"{attacker.name} взорвалась!")
-                attacker.health = 0
 
         if attacker.name == "Cappuccino Assassino":
             cappuccino = self.Cappuccino_Assassino(attacker)
@@ -451,19 +465,6 @@ class Deck:
                 self.grid[row][col] = cappuccino
                 print(f"{attacker.name} оставил Cappuccino!")
 
-        return True
-
-    def _apply_kill_abilities(self, attacker, defender, player_id, col):
-        """Применяет способности после убийства"""
-        if attacker.name == "Brr Brr Patapim":
-            self.Brr_Brr_Patapim(attacker)
-            print(f"{attacker.name} потерял 1 к атаке за убийство!")
-
-        if defender and defender.name == "Balerinna Cappucinna":
-            if not getattr(defender, 'debuff_applied', False):
-                attacker.attack = max(0, attacker.attack - 2)
-                defender.debuff_applied = True
-                print(f"{defender.name} уменьшил атаку убийцы на 2!")
 
     def _has_allies_nearby(self, row, col, player_id):
         """Проверяет есть ли союзники рядом с картой"""
@@ -473,6 +474,13 @@ class Deck:
                     if (player_id == 1 and r < 2) or (player_id == 2 and r >= 2):
                         return True
         return False
+
+    def _activate_placement_abilities(self, card, row, col, player_id):
+        """Активирует способности при размещении карты"""
+        if card.name == "Bombombini Gusini":
+            self._check_bombombini_buff(row, col, player_id)
+        elif card.name == "Boneca Ambamabu":
+            self._move_and_buff_ally(row, col, player_id)
 
     def _get_target_enemy(self, card, player_id):
         """
@@ -502,12 +510,6 @@ class Deck:
         # Если убийца не найден, берём с максимальной атакой
         return max(enemies, key=lambda x: x[2].attack)
 
-    def _activate_placement_abilities(self, card, row, col, player_id):
-        """Активирует способности при размещении карты"""
-        if card.name == "Bombombini Gusini":
-            self._check_bombombini_buff(row, col, player_id)
-        elif card.name == "Boneca Ambamabu":
-            self._move_and_buff_ally(row, col, player_id)
 
     def _check_bombombini_buff(self, row, col, player_id):
         """Проверяет наличие Bombordilo Crocodilo рядом для баффа"""

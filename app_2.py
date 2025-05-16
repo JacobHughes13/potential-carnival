@@ -662,8 +662,7 @@ def disconnect_watcher() -> None:
 
 def main() -> None:
     Thread(target=disconnect_watcher, daemon=True).start()
-    socketio.run(app=app, host='127.0.0.1', port=8080,
-                 debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app=app)
 
 
 if __name__ == '__main__':

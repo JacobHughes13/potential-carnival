@@ -262,23 +262,15 @@
 
                             cardElement.appendChild(nameElement);
                             cardElement.appendChild(statsElement);
-<<<<<<< HEAD
 
-=======
->>>>>>> b5ae8e48dd0968c04f664b59dfadce05e0e9125c
                             cell.appendChild(cardElement);
                         } else if ((playerId === 1 && row === 0) || (playerId === 2 && row === 3)) {
                             // Empty slots for current player
                             const slot = document.createElement('div');
                             slot.className = 'empty-slot';
                             slot.addEventListener('click', () => {
-<<<<<<< HEAD
                                 if (selectedCardId) {
                                     if (confirm(`Разместить карту здесь?`)) {
-=======
-                                if (!(selectedCardId === null)) {
-                                    if (confirm(`Разместить карту #${selectedCardId} здесь?`)) {
->>>>>>> b5ae8e48dd0968c04f664b59dfadce05e0e9125c
                                         socket.emit('game_action', {
                                             action: 'place_card',
                                             room: lobbyCode,

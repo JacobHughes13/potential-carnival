@@ -336,7 +336,6 @@ def join_lobby() -> Response | str:
 def game(lobby_code: str) -> Response | str:
     if 'username' not in session:
         return redirect(url_for('login'))
-
     if lobby_code not in rooms.keys():
         flash('Лобби не найдено.')
         return redirect(url_for('lobby'))

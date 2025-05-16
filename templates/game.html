@@ -260,35 +260,13 @@
 
                             cardElement.appendChild(nameElement);
                             cardElement.appendChild(statsElement);
-
-                            // Make attackable cards clickable
-                            if ((playerId === 1 && row === 1) || (playerId === 2 && row === 2)) {
-                                if (card.ready_to_attack) {
-                                    cardElement.style.cursor = 'pointer';
-                                    cardElement.addEventListener('click', () => {
-                                        if (confirm(`Атаковать картой ${card.name}?`)) {
-                                            const targetRow = playerId === 1 ? 2 : 1;
-                                            socket.emit('game_action', {
-                                                action: 'attack',
-                                                room: lobbyCode,
-                                                player_id: playerId,
-                                                attacker_row: row,
-                                                attacker_col: col,
-                                                defender_row: targetRow,
-                                                defender_col: col
-                                            });
-                                        }
-                                    });
-                                }
-                            }
-
                             cell.appendChild(cardElement);
                         } else if ((playerId === 1 && row === 0) || (playerId === 2 && row === 3)) {
                             // Empty slots for current player
                             const slot = document.createElement('div');
                             slot.className = 'empty-slot';
                             slot.addEventListener('click', () => {
-                                if (selectedCardId) {
+                                if (!(selectedCardId === null)) {
                                     if (confirm(`Разместить карту #${selectedCardId} здесь?`)) {
                                         socket.emit('game_action', {
                                             action: 'place_card',

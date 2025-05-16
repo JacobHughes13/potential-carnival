@@ -32,24 +32,20 @@
        loop src="{{ url_for('static', filename='music/background.mp3') }}"></audio>
 
 <script>
-    const music   = document.getElementById('bg-music');
     const slider  = document.getElementById('volume');
-    const toggler = document.getElementById('music-toggle');
-    const volVal  = document.getElementById('vol-val');
+    const toggle  = document.getElementById('music-toggle');
+    const val     = document.getElementById('vol-val');
 
-    // первичная инициализация
-    music.volume = slider.value / 100;
-    music.play().catch(()=>{});        // без await – в некоторых браузерах потребуется действие пользователя
-    volVal.textContent = slider.value;
+    slider.value  = localStorage.getItem('vol') * 100 || 50;
+    toggle.checked = !(JSON.parse(localStorage.getItem('muted') ?? 'false'));
+    val.textContent = slider.value;
 
     slider.oninput = () => {
-        music.volume = slider.value / 100;
-        volVal.textContent = slider.value;
+        const v = slider.value/100;
+        val.textContent = slider.value;
+        window.dispatchEvent(new CustomEvent('music:set-volume',{detail:v}));
     };
-    toggler.onchange = () => {
-        if (toggler.checked) music.play().catch(()=>{});
-        else music.pause();
-    };
+    toggle.onchange = () => window.dispatchEvent(new Event('music:toggle'));
 </script>
 </body>
 </html>

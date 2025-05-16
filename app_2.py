@@ -184,7 +184,7 @@ def invite_friend(friend_username: str) -> Response:
     code = generate_lobby_code()
     rooms[code] = {
         'host'            : host,
-        'guest'           : friend_username,
+        'guest'           : None,
         'deck'            : Deck(db_path),
         'state'           : GameStates.WAITING,
         'last_action'     : dt.now(),
@@ -192,9 +192,20 @@ def invite_friend(friend_username: str) -> Response:
         'disconnect_timer': {1: None, 2: None}
     }
     user_rooms[host] = code
+    _init_hands(rooms[code]['deck'])
 
     return redirect(url_for('game',
                             lobby_code=code))
+
+
+@socketio.on('send_invite')
+def send_invite(data):
+    friend = data['friend']
+    code   = data['room']
+
+    emit('receive_invite',
+         {'room': code, 'host': session['username']},
+         room=friend)
 
 
 @app.route('/play_self')
@@ -203,22 +214,29 @@ def play_self() -> Response:
 
 
 @app.route("/play")
-def play() -> Response | str:
+def play():
     if "user_id" not in session:
         return redirect(url_for('login'))
 
     current_player = session.get('current_player', 1)
-    username = session.get('username')
-    card_ids = session.get(f'available_cards_p{current_player}', [])
-    cards = [deck.get_card_by_id(cid) for cid in card_ids]
+    username = session['username']
 
-    return render_template("index.html",
-                           cards=cards,
-                           grid=deck.grid,
-                           current_player=current_player,
-                           damage_balance=deck.damage_balance,
-                           coins=deck.coins,
-                           username=username)
+    game_state = deck.get_game_state(current_player)   # <-- добавили
+    av_cards = session.get(f'available_cards_p{current_player}', [])
+    cards = [deck.get_card_by_id(cid) for cid in av_cards]
+    grid = game_state['grid']
+    damage_balance = game_state['damage_balance']
+
+    return render_template(
+        "index.html",
+        cards=cards,
+        game_state=game_state,
+        current_player=current_player,
+        grid=grid,
+        damage_balance=damage_balance,
+        coins=deck.coins,
+        username=username
+    )
 
 
 @app.route("/pick_up_the_card/<int:card_id>")
@@ -312,6 +330,11 @@ def lobby() -> Response | str:
                            username=username)
 
 
+def _init_hands(d: Deck) -> None:
+    d.available_cards_p1 = [d.get_random_card().id]
+    d.available_cards_p2 = [d.get_random_card().id]
+
+
 @app.route('/create_lobby')
 def create_lobby() -> Response | str:
     if 'username' not in session:
@@ -328,6 +351,7 @@ def create_lobby() -> Response | str:
         'disconnect_timer': {1: None, 2: None}
     }
     user_rooms[session['username']] = code
+    _init_hands(rooms[code]['deck'])
 
     return render_template('create_lobby.html',
                            lobby_code=code)

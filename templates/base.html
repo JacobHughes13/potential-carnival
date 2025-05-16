@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    {% block head %}
+        <meta charset="UTF-8">
+        <title>{% block title %}{% endblock %}</title>
+        <link rel="stylesheet"
+              href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap">
+        <link rel="stylesheet"
+              href="{{ url_for('static', filename='style.css') }}">
+        {% block extra_head %}{% endblock %}
+    {% endblock %}
+</head>
+<body>
+    {% block content %}{% endblock %}
+
+    <audio id="bg-music" src="{{ url_for('static', filename='music/background.mp3') }}" loop></audio>
+
+    <script>
+        const audio  = document.getElementById('bg-music');
+        const vol    = localStorage.getItem('vol') ?? 0.5;
+        const muted  = JSON.parse(localStorage.getItem('muted') ?? 'false');
+
+        audio.volume = vol;
+        if (!muted) audio.play().catch(()=>{});
+
+        window.addEventListener('music:set-volume', e => {
+            audio.volume = e.detail;
+            localStorage.setItem('vol', e.detail);
+        });
+        window.addEventListener('music:toggle', () => {
+            if (audio.paused) { audio.play().catch(()=>{}); localStorage.setItem('muted','false'); }
+            else              { audio.pause();               localStorage.setItem('muted','true');  }
+        });
+    </script>
+    {% block extra_body %}{% endblock %}
+</body>
+</html>

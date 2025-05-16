@@ -214,26 +214,38 @@ def play_self() -> Response:
 
 
 @app.route("/play")
-def play():
+def play() -> Response | str:
     if "user_id" not in session:
         return redirect(url_for('login'))
 
-    current_player = session.get('current_player', 1)
-    username = session['username']
+    current_player: int = session.get('current_player', 1)
+    username: str       = session['username']
 
-    game_state = deck.get_game_state(current_player)   # <-- добавили
-    av_cards = session.get(f'available_cards_p{current_player}', [])
-    cards = [deck.get_card_by_id(cid) for cid in av_cards]
-    grid = game_state['grid']
-    damage_balance = game_state['damage_balance']
+    hand_key = f'available_cards_p{current_player}'
+    deck_hand: list[int] = getattr(deck, hand_key)
+    sess_hand: list[int] = session.get(hand_key, [])
+
+    if not sess_hand:
+        card = deck.get_random_card()
+        if card:
+            sess_hand = [card.id]
+            session[hand_key] = sess_hand
+            deck_hand.clear()
+            deck_hand.append(card.id)
+    else:
+        deck_hand.clear()
+        deck_hand.extend(sess_hand)
+
+    cards = [deck.get_card_by_id(cid) for cid in sess_hand]
+    game_state = deck.get_game_state(current_player)
 
     return render_template(
         "index.html",
         cards=cards,
         game_state=game_state,
         current_player=current_player,
-        grid=grid,
-        damage_balance=damage_balance,
+        grid=game_state["grid"],
+        damage_balance=game_state["damage_balance"],
         coins=deck.coins,
         username=username
     )
@@ -273,13 +285,13 @@ def player1_turn() -> Response:
     deck.move_cards(player_id)
     deck.end_turn(player_id)
 
-    '''key = f'available_cards_p{player_id}'
+    key = f'available_cards_p{player_id}'
     cards = session.get(key, [])
     if len(cards) < 3:
         new_card = deck.get_random_card()
         if new_card:
             cards.append(new_card.id)
-    session[key] = cards'''
+    session[key] = cards
 
     session['current_player'] = 2
     return redirect(url_for("play"))
@@ -296,13 +308,13 @@ def player2_turn() -> Response:
     deck.move_cards(player_id)
     deck.end_turn(player_id)
 
-    '''key = f'available_cards_p{player_id}'
+    key = f'available_cards_p{player_id}'
     cards = session.get(key, [])
     if len(cards) < 3:
         new_card = deck.get_random_card()
         if new_card:
             cards.append(new_card.id)
-    session[key] = cards'''
+    session[key] = cards
 
     session['current_player'] = 1
     return redirect(url_for("play"))
@@ -310,12 +322,18 @@ def player2_turn() -> Response:
 
 @app.route("/reset")
 def reset() -> Response:
-    deck.reset()
+    deck.reset()                                # обнуляем поле и экономику
     session['current_player'] = 1
     session.pop('selected_card', None)
 
-    session['available_cards_p1'] = [deck.get_random_card().id]
-    session['available_cards_p2'] = [deck.get_random_card().id]
+    c1 = deck.get_random_card()
+    c2 = deck.get_random_card()
+
+    deck.available_cards_p1 = [c1.id] if c1 else []
+    deck.available_cards_p2 = [c2.id] if c2 else []
+
+    session['available_cards_p1'] = deck.available_cards_p1.copy()
+    session['available_cards_p2'] = deck.available_cards_p2.copy()
 
     return redirect(url_for("play"))
 

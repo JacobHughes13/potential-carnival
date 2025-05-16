@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Друзья</title>
+    <title>Друзья | 🧠 BRAINROT BATTLE 🧠</title>
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -29,6 +29,11 @@
 
     <a href="{{ url_for('main_menu') }}"
        class="control-button">🏠 На главную</a>
+    <script>
+        socket.on('redirect', data => {
+            window.location.href = data.url;
+        });
+    </script>
 </div>
 </body>
 </html>

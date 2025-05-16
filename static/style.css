@@ -514,6 +514,7 @@ body {
 }
 
 .balance-bar {
+<<<<<<< HEAD
     height: 10px;
     background: linear-gradient(to right,
                  var(--danger) 0%,
@@ -534,6 +535,13 @@ body {
     left: var(--line-pos, 50%);
     transform: translateX(-50%);
     transition: left .25s ease-out;
+=======
+    height: 8px;
+    background: linear-gradient(90deg,#7dd56f 0%,#d9534f 100%);
+    width: var(--balance,50%);
+    transition: width .3s ease-in-out;
+    border-radius: 4px;
+>>>>>>> b5ae8e48dd0968c04f664b59dfadce05e0e9125c
 }
 
 .grid-container {
@@ -568,6 +576,7 @@ body {
     border-radius: 8px;
 }
 
+<<<<<<< HEAD
 .gear-btn {
     position: fixed;
     top: 12px;
@@ -584,6 +593,8 @@ body {
     scale(1.1);
 }
 
+=======
+>>>>>>> b5ae8e48dd0968c04f664b59dfadce05e0e9125c
 .empty-slot.passive {
     pointer-events: none;
     opacity: .15;

@@ -56,7 +56,13 @@
                     <div class="grid-cell" data-row="{{ row }}" data-col="{{ col }}">
                         {% if game_state.grid[row][col] %}
                         <div class="card player{{ 1 if row < 2 else 2 }}">
-                            <div class="card-name">{{ game_state.grid[row][col].name }}</div>
+                            <div class="card-name">
+                                {{ game_state.grid[row][col].name }}
+                                {% if game_state.grid[row][col].ability_key %}
+                                    <span class="ability-icon"
+                                          title="{{ game_state.grid[row][col].ability_key }}">✨</span>
+                                {% endif %}
+                            </div>
                             <img class="card-img"
                                  src="{{ url_for('static',
                                                  filename='img/' +

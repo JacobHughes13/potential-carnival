@@ -252,6 +252,12 @@ body {
     z-index: -1;
 }
 
+.ability-icon{
+    margin-left:4px;
+    cursor:help;
+    user-select:none;
+}
+
 .player1 .card {
     border: 2px solid var(--primary);
 }

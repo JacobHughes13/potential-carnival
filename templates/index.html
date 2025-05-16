@@ -54,11 +54,15 @@
                     {% for col_idx in range(5) %}
                     <div class="grid-cell {% if not grid[row_idx][col_idx] and ((current_player == 1 and row_idx == 0) or (current_player == 2 and row_idx == 3)) %}empty{% endif %}">
                         {% if grid[row_idx][col_idx] %}
-                        <div class="card player{{ grid[row_idx][col_idx].player_id }}">
-                            <div class="card-name">{{ grid[row_idx][col_idx].name }}</div>
+                        <div class="card player{{ 1 if row_idx < 2 else 2 }}">
+                            <div class="card-name">{{ game_state.grid[row][col].name }}</div>
+                            <img class="card-img"
+                                 src="{{ url_for('static', filename='play/' +
+                                                 '_'.join(game_state.grid[row][col].name.split()) + '.jpg') }}"
+                                 alt="">
                             <div class="card-stats">
-                                <span>⚔️{{ grid[row_idx][col_idx].attack }}</span>
-                                <span>❤️{{ grid[row_idx][col_idx].health }}</span>
+                                <span>⚔️{{ game_state.grid[row][col].attack }}</span>
+                                <span>❤️{{ game_state.grid[row][col].health }}</span>
                             </div>
                         </div>
                         {% else %}

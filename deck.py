@@ -136,10 +136,12 @@ class Deck:
         hand_attr = f'available_cards_p{player_id}'
         if not hasattr(self, hand_attr):
             setattr(self, hand_attr, [])
+        hand = getattr(self, hand_attr)
 
-        new_card = self.get_random_card()
-        if new_card:
-            getattr(self, hand_attr).append(new_card.id)
+        if len(hand) < 3:
+            new_card = self.get_random_card()
+            if new_card:
+                hand.append(new_card.id)
 
     def get_game_state(self, player_id: int) -> dict:
         opp = 2 if player_id == 1 else 1

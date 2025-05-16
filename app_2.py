@@ -222,13 +222,13 @@ def play() -> Response | str:
 
 
 @app.route("/pick_up_the_card/<int:card_id>")
-def pick_up_the_card(card_id: int):
+def pick_up_the_card(card_id: int) -> Response:
     session['selected_card'] = card_id
     return redirect(url_for("play"))
 
 
 @app.route("/place_card/<int:row>/<int:col>")
-def place_card(row: int, col: int):
+def place_card(row: int, col: int) -> Response:
     current_player = session.get('current_player', 1)
     card_key = f'available_cards_p{current_player}'
 
@@ -239,12 +239,13 @@ def place_card(row: int, col: int):
                 session[card_key] = [cid for cid in session[card_key]
                                      if cid != session['selected_card']]
             session.pop('selected_card', None)
+
     return redirect(url_for("play"))
 
 
 
 @app.route("/player1_turn")
-def player1_turn():
+def player1_turn() -> Response:
     player_id = 1
     winner = deck.battle_phase(player_id)
     if winner:
@@ -254,20 +255,20 @@ def player1_turn():
     deck.move_cards(player_id)
     deck.end_turn(player_id)
 
-    key = f'available_cards_p{player_id}'
+    '''key = f'available_cards_p{player_id}'
     cards = session.get(key, [])
     if len(cards) < 3:
         new_card = deck.get_random_card()
         if new_card:
             cards.append(new_card.id)
-    session[key] = cards
+    session[key] = cards'''
 
     session['current_player'] = 2
     return redirect(url_for("play"))
 
 
 @app.route("/player2_turn")
-def player2_turn():
+def player2_turn() -> Response:
     player_id = 2
     winner = deck.battle_phase(player_id)
     if winner:
@@ -277,20 +278,20 @@ def player2_turn():
     deck.move_cards(player_id)
     deck.end_turn(player_id)
 
-    key = f'available_cards_p{player_id}'
+    '''key = f'available_cards_p{player_id}'
     cards = session.get(key, [])
     if len(cards) < 3:
         new_card = deck.get_random_card()
         if new_card:
             cards.append(new_card.id)
-    session[key] = cards
+    session[key] = cards'''
 
     session['current_player'] = 1
     return redirect(url_for("play"))
 
 
 @app.route("/reset")
-def reset():
+def reset() -> Response:
     deck.reset()
     session['current_player'] = 1
     session.pop('selected_card', None)

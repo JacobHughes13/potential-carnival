@@ -203,11 +203,10 @@
             document.querySelector('.balance-bar')
                     .style.setProperty('--line-pos', pct + '%');
             document.getElementById('balance-amount').textContent =
-                    gameState.damage_balance;
+                    gameState.damage_balance || 0;
 
-            // Update coins and balance
+            // Update coins
             document.getElementById('coins-amount').textContent = gameState.coins || 0;
-            document.getElementById('balance-amount').textContent = gameState.damage_balance || 0;
 
             // Update available cards
             const hand = gameState.available_cards || [];

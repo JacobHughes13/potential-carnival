@@ -61,7 +61,7 @@ class Deck:
 
     def get_random_card(self) -> Optional[Card]:
         session = self.Session()
-        cards = session.query(Card).all()
+        cards = session.query(Card).filter(Card.id > 0).all()
         session.close()
         return choice(cards) if cards else None
 

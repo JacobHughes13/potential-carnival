@@ -44,6 +44,7 @@ class Card(SqlAlchemyBase):
     player_id      : int  | None = None
     row            : int  | None = None
     col            : int  | None = None
+    __allow_unmapped__ = True
 
     # ──────────────── helpers ────────────────
     @property

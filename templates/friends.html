@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
     <title>Друзья</title>
     <link rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}">
+          href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Ваши друзья</h1>
-    <ul>
-        {% for friend in friends %}
-            <li>{{ friend[0] }}</li>
-        {% endfor %}
-    </ul>
+<div class="game-container friends-container fade-in">
+    <h1 class="title">👥 Ваши друзья</h1>
 
-    <h2>Добавить друга</h2>
-    <form method="post">
+    {% for friend in friends %}
+    <div class="friend-item">
+        <span class="friend-name">{{ friend[0] }}</span>
+        <a href="{{ url_for('invite_friend', friend_username=friend[0]) }}"
+           class="invite-btn">Пригласить</a>
+    </div>
+    {% endfor %}
+
+    <form method="post"
+          class="add-friend-form">
         <input type="text"
                name="friend_username"
                placeholder="Имя друга"
@@ -22,6 +27,8 @@
         <button type="submit">Добавить</button>
     </form>
 
-    <a href="/">На главную</a>
+    <a href="{{ url_for('main_menu') }}"
+       class="control-button">🏠 На главную</a>
+</div>
 </body>
 </html>

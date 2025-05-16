@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Настройки</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="game-container menu-container fade-in"
+     style="max-width:600px;">
+    <h1 class="title">⚙️ Настройки</h1>
+
+    <div style="text-align:left;">
+        <label for="volume">Громкость музыки: <span id="vol-val">50</span>%</label>
+        <input type="range" id="volume" min="0" max="100" value="50">
+    </div>
+
+    <div style="margin-top:15px;">
+        <label>
+            <input type="checkbox" id="music-toggle" checked>
+            Включить музыку
+        </label>
+    </div>
+
+    <a href="{{ url_for('main_menu') }}"
+       class="control-button"
+       style="margin-top:20px;">Назад</a>
+</div>
+
+<audio id="bg-music"
+       loop src="{{ url_for('static', filename='background.mp3') }}"></audio>
+
+<script>
+    const music   = document.getElementById('bg-music');
+    const slider  = document.getElementById('volume');
+    const toggler = document.getElementById('music-toggle');
+    const volVal  = document.getElementById('vol-val');
+
+    // первичная инициализация
+    music.volume = slider.value / 100;
+    music.play().catch(()=>{});        // без await – в некоторых браузерах потребуется действие пользователя
+    volVal.textContent = slider.value;
+
+    slider.oninput = () => {
+        music.volume = slider.value / 100;
+        volVal.textContent = slider.value;
+    };
+    toggler.onchange = () => {
+        if (toggler.checked) music.play().catch(()=>{});
+        else music.pause();
+    };
+</script>
+</body>
+</html>

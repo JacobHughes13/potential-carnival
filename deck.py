@@ -76,11 +76,11 @@ class Deck:
 
         self.coins[player_id] -= card.cost
         card.ready_to_attack = False
+        card.player_id = player_id
         self.grid[row][col] = card
+        if card_id in getattr(self, f'available_cards_p{player_id}', []):
+            getattr(self, f'available_cards_p{player_id}').remove(card_id)
 
-        hand_attr = f'available_cards_p{player_id}'
-        if card_id in getattr(self, hand_attr, []):
-            getattr(self, hand_attr).remove(card_id)
         return True
 
     def move_cards(self, player_id: int) -> None:
@@ -142,33 +142,34 @@ class Deck:
             getattr(self, hand_attr).append(new_card.id)
 
     def get_game_state(self, player_id: int) -> dict:
-        opponent_id = 2 if player_id == 1 else 1
+        opp = 2 if player_id == 1 else 1
 
-        visible_grid: list[list[Optional[dict | None]]] = []
-        for r, row in enumerate(self.grid):
-            visible_row = []
-            for c, card in enumerate(row):
-                if card is None:
-                    visible_row.append(None)
-                else:
-                    visible_row.append({
-                        'name': card.name,
-                        'attack': card.attack,
-                        'health': card.health,
-                        'ready_to_attack': getattr(card, 'ready_to_attack', False)
-                        })
-            visible_grid.append(visible_row)
+        grid_out = []
+        for row in self.grid:
+            row_out = []
+            for card in row:
+                row_out.append(None if card is None else {
+                    'name'            : card.name,
+                    'attack'          : card.attack,
+                    'health'          : card.health,
+                    'ready_to_attack' : getattr(card, 'ready_to_attack', False),  #  &larr; вернули старое имя
+                    'player_id'       : getattr(card, 'player_id', 0)
+                })
+            grid_out.append(row_out)
 
-        hand_attr = f'available_cards_p{player_id}'
-        hand = getattr(self, hand_attr, [])
+        hand = []
+        for cid in getattr(self, f'available_cards_p{player_id}', []):
+            c = self.get_card_by_id(cid)
+            hand.append({'id': cid, 'name': c.name,
+                         'attack': c.attack, 'health': c.health})
 
         return {
-            'grid'           : visible_grid,
+            'grid'           : grid_out,
             'damage_balance' : self.damage_balance,
             'coins'          : self.coins[player_id],
             'income'         : self.income[player_id],
-            'available_cards': hand,
-            'opponent_coins' : self.coins[opponent_id],
+            'available_cards': hand,                       # &larr; список словарей
+            'opponent_coins' : self.coins[opp],
             'turn_count'     : self.turn_count[player_id]
         }
 

@@ -65,10 +65,7 @@ def home() -> Response:
 
 @app.route("/settings")
 def settings() -> Response | str:
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    return "Настройки настраиваются"  # Заглушка
+    return render_template("settings.html")
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -172,6 +169,32 @@ def friends() -> Response | str:
 
     return render_template("friends.html",
                            friends=friends_list)
+
+
+@app.route("/invite/<friend_username>")
+def invite_friend(friend_username: str) -> Response:
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    host = session['username']
+    if host == friend_username:
+        flash("Нельзя пригласить себя :)")
+        return redirect(url_for('friends'))
+
+    code = generate_lobby_code()
+    rooms[code] = {
+        'host'            : host,
+        'guest'           : friend_username,
+        'deck'            : Deck(db_path),
+        'state'           : GameStates.WAITING,
+        'last_action'     : dt.now(),
+        'connected'       : {1: True, 2: False},
+        'disconnect_timer': {1: None, 2: None}
+    }
+    user_rooms[host] = code
+
+    return redirect(url_for('game',
+                            lobby_code=code))
 
 
 @app.route('/play_self')
@@ -304,7 +327,9 @@ def create_lobby() -> Response | str:
         'disconnect_timer': {1: None, 2: None}
     }
     user_rooms[session['username']] = code
-    return render_template('create_lobby.html', lobby_code=code)
+
+    return render_template('create_lobby.html',
+                           lobby_code=code)
 
 
 @app.route('/cancel_lobby', methods=['POST'])
@@ -557,13 +582,14 @@ def handle_game_action(data) -> None:
 
 
 @socketio.on('join_game')
-def handle_join_game(data):
+def handle_join_game(data) -> None:
     lobby_code = data.get('lobby_code', '').upper()
     username = session.get('username')
     player_id = data.get('player_id')
 
     if not (username and lobby_code in rooms):
-        emit('error', {'message': 'Лобби не найдено'})
+        emit('error',
+             {'message': 'Лобби не найдено'})
         return
 
     join_room(lobby_code)

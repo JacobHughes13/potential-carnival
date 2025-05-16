@@ -38,19 +38,11 @@
             <div class="player-area">
                 <h3>Ваши карты:</h3>
                 <div class="card-selection">
-                    {% if current_player == 1 %}
-                        {% for card in cards %}
-                        <a href="/pick_up_the_card/{{ card.id }}" class="card-preview">
-                            {{ card.name }} (⚔️{{ card.attack }} ❤️{{ card.health }})
-                        </a>
-                        {% endfor %}
-                    {% else %}
-                        {% for card in cards %}
-                        <a href="/pick_up_the_card/{{ card.id }}" class="card-preview">
-                            {{ card.name }} (⚔️{{ card.attack }} ❤️{{ card.health }})
-                        </a>
-                        {% endfor %}
-                    {% endif %}
+                    {% for card in cards %}
+                    <a href="/pick_up_the_card/{{ card.id }}" class="card-preview">
+                        {{ card.name }} (⚔️{{ card.attack }} ❤️{{ card.health }})
+                    </a>
+                    {% endfor %}
                 </div>
             </div>
         </div>

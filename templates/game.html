@@ -19,10 +19,12 @@
                 <h2 id="player-id">Игрок: {{ username }}</h2>
                 <h3 id="opponent-name">Противник: {{ opponent }}</h3>
                 <div class="balance-indicator">
-                    <p>
-                        <strong>Баланс:</strong><span id="balance-amount">{{ game_state.damage_balance }}</span>
+                    <p><strong>Баланс:</strong>
+                        <span id="balance-amount">{{ game_state.damage_balance }}</span>
                     </p>
-                    <div class="balance-bar" style="--balance: {{ (game_state.damage_balance + 10) * 5 }}%"></div>
+                    <div class="balance-bar"
+                         style="--line-pos: {{ (game_state.damage_balance + 10) * 5 }}%;">
+                    </div>
                 </div>
                 <p>
                     <strong>Монеты:</strong><span id="coins-amount">{{ game_state.coins }}</span> 💰
@@ -38,11 +40,9 @@
             <div class="player-area">
                 <h3>Ваши карты:</h3>
                 <div id="available-cards" class="card-selection">
-                    {% for card_id in game_state.available_cards %}
-                    <div class="card-preview" data-card-id="{{ card_id }}">
-                        {{ deck.get_card_by_id(card_id).name }}
-                        (⚔️{{ deck.get_card_by_id(card_id).attack }}
-                        ❤️{{ deck.get_card_by_id(card_id).health }})
+                    {% for c in game_state.available_cards %}
+                    <div class="card-preview" data-card-id="{{ c.id }}">
+                        {{ c.name }} (⚔️{{ c.attack }} ❤️{{ c.health }})
                     </div>
                     {% endfor %}
                 </div>
@@ -198,33 +198,35 @@
         function updateUI(gameState) {
             if (!gameState) return;
 
+            /* 1. баланс-бар */
+            const pct = 50 + gameState.damage_balance * 5;
+            document.querySelector('.balance-bar')
+                    .style.setProperty('--line-pos', pct + '%');
+            document.getElementById('balance-amount').textContent =
+                    gameState.damage_balance;
+
             // Update coins and balance
             document.getElementById('coins-amount').textContent = gameState.coins || 0;
             document.getElementById('balance-amount').textContent = gameState.damage_balance || 0;
 
             // Update available cards
-            const cardsContainer = document.getElementById('available-cards');
+            const hand = gameState.available_cards || [];
+            const cardsContainer  = document.getElementById('available-cards');
             cardsContainer.innerHTML = '';
 
-            if (gameState.available_cards && gameState.available_cards.length) {
-                gameState.available_cards.forEach(cardId => {
-                    const cardElement = document.createElement('div');
-                    cardElement.className = 'card-preview';
-                    cardElement.textContent = `Карта #${cardId}`;
-                    cardElement.dataset.cardId = cardId;
+            if (hand) {
+                hand.forEach(c => {
+                    const el       = document.createElement('div');
+                    el.className   = 'card-preview';
+                    el.dataset.cardId = c.id;
+                    el.textContent = `${c.name} (⚔️${c.attack} ❤️${c.health})`;
 
-                    if (selectedCardId === cardId) {
-                        cardElement.classList.add('selected');
-                    }
-
-                    cardElement.addEventListener('click', () => {
-                        selectedCardId = cardId;
-                        document.querySelectorAll('.card-preview').forEach(el => {
-                            el.classList.toggle('selected', el.dataset.cardId === selectedCardId);
-                        });
-                    });
-
-                    cardsContainer.appendChild(cardElement);
+                    el.onclick = () => {
+                        selectedCardId = c.id;
+                        document.querySelectorAll('.card-preview')
+                                .forEach(x => x.classList.toggle('selected', x === el));
+                    };
+                    cardsContainer.appendChild(el);
                 });
             } else {
                 cardsContainer.innerHTML = '<p>Нет доступных карт</p>';
@@ -261,27 +263,6 @@
                             cardElement.appendChild(nameElement);
                             cardElement.appendChild(statsElement);
 
-                            // Make attackable cards clickable
-                            if ((playerId === 1 && row === 1) || (playerId === 2 && row === 2)) {
-                                if (card.ready_to_attack) {
-                                    cardElement.style.cursor = 'pointer';
-                                    cardElement.addEventListener('click', () => {
-                                        if (confirm(`Атаковать картой ${card.name}?`)) {
-                                            const targetRow = playerId === 1 ? 2 : 1;
-                                            socket.emit('game_action', {
-                                                action: 'attack',
-                                                room: lobbyCode,
-                                                player_id: playerId,
-                                                attacker_row: row,
-                                                attacker_col: col,
-                                                defender_row: targetRow,
-                                                defender_col: col
-                                            });
-                                        }
-                                    });
-                                }
-                            }
-
                             cell.appendChild(cardElement);
                         } else if ((playerId === 1 && row === 0) || (playerId === 2 && row === 3)) {
                             // Empty slots for current player
@@ -289,7 +270,7 @@
                             slot.className = 'empty-slot';
                             slot.addEventListener('click', () => {
                                 if (selectedCardId) {
-                                    if (confirm(`Разместить карту #${selectedCardId} здесь?`)) {
+                                    if (confirm(`Разместить карту здесь?`)) {
                                         socket.emit('game_action', {
                                             action: 'place_card',
                                             room: lobbyCode,

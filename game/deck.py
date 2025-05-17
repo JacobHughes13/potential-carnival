@@ -402,12 +402,12 @@ class Deck:
             self._on_card_killed(card)
             self.grid[row][col] = None
 
-    # 17) Chimpazini — когда игрок получает монеты &rarr; +2 к атаке
+    # 17) Chimpazini — когда игрок получает монеты +2 к атаке
     @staticmethod
     def ab_chimpazini_bananini(card: Card, row: int, col: int, **kw) -> None:
         card.attack += 2
 
-    # 18) Balerinna — когда враг её убивает &rarr; -2 к атаке врагу
+    # 18) Balerinna — когда враг её убивает -2 к атаке врагу
     @staticmethod
     def ab_balerinna_cappucinna(card: Card, row: int, col: int, victim: Card, killer: Card, **kw) -> None:
         if victim is card and killer:
